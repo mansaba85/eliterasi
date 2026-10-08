@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* Apply clean, crisp modern typography universally across the application */
+html, body, button, input, textarea, select {
+  font-family: var(--font-sans), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Heading Typography */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-sans), 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  letter-spacing: -0.018em;
+}
+
+/* Literature Content Serif uses Lora */
+.font-serif {
+  font-family: 'Lora', serif !important;
+}
+
+/* Literature Content Sans uses Poppins */
+.font-sans-literasi {
+  font-family: 'Poppins', sans-serif !important;
+}
+
+/* Hide scrollbar for Chrome, Safari, Opera, Edge, and Firefox */
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+  background: transparent;
+}
+
+.scrollbar-hide,
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom sleek scrollbar for admin sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================== */
+/* SMOOTH & ULTRA-LIGHTWEIGHT MOTION SYSTEM (GPU-ACCELERATED)      */
+/* ============================================================== */
+
+@keyframes smoothFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes smoothScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes smoothSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes smoothHeartBounce {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.35) rotate(-8deg); }
+  50% { transform: scale(0.9) rotate(4deg); }
+  75% { transform: scale(1.15) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes smoothPillPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-heart-bounce {
+  animation: smoothHeartBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes smoothPageFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-page-fade {
+  animation: smoothPageFade 0.2s ease-out forwards;
+}
+
+.animate-smooth-in {
+  animation: smoothFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: smoothScaleIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-slide-right {
+  animation: smoothSlideInRight 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Staggered entry classes for lists and feeds */
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
+
+/* Micro-interaction interactive transitions (Buttons, Cards, Chips) */
+.pressable {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background-color 0.15s ease;
+  will-change: transform;
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+.card-hover-lift {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  will-change: transform, box-shadow;
+}
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+}
+.card-hover-lift:active {
+  transform: translateY(0) scale(0.99);
+}
+

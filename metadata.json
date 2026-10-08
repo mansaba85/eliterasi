@@ -1,0 +1,6 @@
+{
+  "name": "E-Literasi MA NU 01 Banyuputih",
+  "description": "Aplikasi literasi digital terintegrasi untuk siswa, guru, dan admin di MA NU 01 Banyuputih. Kelola aktivitas literasi, catat tulisan harian, resensi buku, cerpen, puisi, dan laporan pengamatan secara terstruktur.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
