@@ -19,8 +19,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Output standalone hanya jika ditentukan di environment
-  output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
+  // Output standalone untuk Docker production container (hemat memori dan ukuran image)
+  output: 'standalone',
+  devIndicators: false,
   transpilePackages: ['motion'],
   webpack: (config, {dev}) => {
     // HMR is disabled in AI Studio via DISABLE_HMR env var.

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 1. DATABASE POSTGRESQL (Port Host: 5433 - Tidak bentrok dengan host)
+  # =========================================================================
+  eliterasi_db:
+    image: postgres:16-alpine
+    container_name: eliterasi_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: eliterasi_user
+      POSTGRES_PASSWORD: eliterasi_password_manu01
+      POSTGRES_DB: eliterasi_db
+    ports:
+      # Port 5433 di Host dialokasikan khusus agar tidak tabrakan dengan PostgreSQL host default (5432)
+      - "5433:5432"
+    volumes:
+      - eliterasi_pgdata:/var/lib/postgresql/data
+    networks:
+      - eliterasi_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eliterasi_user -d eliterasi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================================================================
+  # 2. NEXT.JS E-LITERASI APPLICATION (Port Host: 8098 - Aman & Bebas Bentrok)
+  # =========================================================================
+  eliterasi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eliterasi_app:latest
+    container_name: eliterasi_web
+    restart: always
+    depends_on:
+      eliterasi_db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://eliterasi_user:eliterasi_password_manu01@eliterasi_db:5432/eliterasi_db?schema=public"
+      NEXT_PUBLIC_APP_URL: "http://localhost:8098"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+    ports:
+      # Port 8098 dipilih berdasarkan daftar portainer Anda (8085-8097 sudah terpakai)
+      - "8098:3000"
+    volumes:
+      # Volume persisten untuk file gambar/cover karya agar tidak hilang saat container di-restart
+      - eliterasi_uploads:/app/public/uploads
+    networks:
+      - eliterasi_net
+
+# =========================================================================
+# VOLUMES & NETWORKS
+# =========================================================================
+volumes:
+  eliterasi_pgdata:
+    name: eliterasi_pgdata
+  eliterasi_uploads:
+    name: eliterasi_uploads
+
+networks:
+  eliterasi_net:
+    name: eliterasi_net
+    driver: bridge

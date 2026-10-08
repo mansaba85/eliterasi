@@ -1,0 +1,281 @@
+// Prisma Schema for E-Literasi MA NU 01 Banyuputih
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SISWA
+  GURU
+  KEPALA_MADRASAH
+  ADMIN
+}
+
+enum TingkatKelas {
+  X
+  XI
+  XII
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReactionMode {
+  KAGUM
+  MENGINSPIRASI
+  KREATIF
+  INFORMATIF
+}
+
+enum ReadingStatus {
+  SEDANG_DIBACA
+  SELESAI
+  INGIN_DIBACA
+}
+
+// -------------------------------------------------------------
+// USER & PROFILE
+// -------------------------------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  nis           String?   @unique // Khusus Siswa
+  nip           String?   @unique // Khusus Guru / Kepala
+  username      String?   @unique
+  passwordHash  String
+  nama          String
+  email         String?   @unique
+  role          Role      @default(SISWA)
+  bio           String?   @db.VarChar(300)
+  fotoUrl       String?
+  poin          Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relasi Kelas (Bagi Siswa)
+  kelasId       String?
+  kelas         Class?    @relation("SiswaKelas", fields: [kelasId], references: [id], onDelete: SetNull)
+
+  // Relasi Wali Kelas (Bagi Guru)
+  waliKelas     Class?    @relation("WaliKelas")
+
+  // Relasi Konten & Aktivitas
+  posts         Post[]    @relation("UserPosts")
+  comments      Comment[]
+  reactions     Reaction[]
+  bookmarks     Bookmark[]
+  gradesGiven   Grade[]   @relation("GuruGrades")
+  readingBooks  ReadingBook[]
+  auditLogs     AuditLog[]
+
+  @@index([nis])
+  @@index([role])
+}
+
+// -------------------------------------------------------------
+// KELAS & ROMBEL
+// -------------------------------------------------------------
+model Class {
+  id            String        @id @default(cuid())
+  namaKelas     String        @unique // Contoh: "X-A", "XI IPS 1"
+  tingkat       TingkatKelas
+  tahunAjaran   String        @default("2026/2027")
+  waliKelasId   String?       @unique
+  waliKelas     User?         @relation("WaliKelas", fields: [waliKelasId], references: [id], onDelete: SetNull)
+
+  siswa         User[]        @relation("SiswaKelas")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([tingkat])
+}
+
+// -------------------------------------------------------------
+// KATEGORI KARYA (Cerpen, Puisi, Resensi, dll)
+// -------------------------------------------------------------
+model Category {
+  id            String    @id @default(cuid())
+  nama          String    @unique
+  kode          String    @unique // slug: "cerpen", "puisi", "resensi"
+  ikon          String    @default("📝")
+  deskripsi     String?
+  posts         Post[]
+}
+
+// -------------------------------------------------------------
+// POST / KARYA SASTRA & LITERASI
+// -------------------------------------------------------------
+model Post {
+  id                String       @id @default(cuid())
+  judul             String       @db.VarChar(200)
+  isi               String       @db.Text
+  jumlahKata        Int          @default(0)
+  coverImage        String?      // Path lokal file terkompresi /uploads/...
+  isMingguLiterasi  Boolean      @default(false)
+  periodeId         String?
+  periode           MingguLiterasiPeriod? @relation(fields: [periodeId], references: [id], onDelete: SetNull)
+  visibilitas       String       @default("publik") // "publik" | "terbatas"
+  status            PostStatus   @default(PUBLISHED)
+  tags              String[]     @default([])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  authorId          String
+  author            User         @relation("UserPosts", fields: [authorId], references: [id], onDelete: Cascade)
+
+  kategoriId        String
+  kategori          Category     @relation(fields: [kategoriId], references: [id], onDelete: Restrict)
+
+  // Interaksi
+  comments          Comment[]
+  reactions         Reaction[]
+  bookmarks         Bookmark[]
+  grade             Grade?
+
+  @@index([authorId])
+  @@index([kategoriId])
+  @@index([isMingguLiterasi])
+  @@index([createdAt(sort: Desc)])
+}
+
+// -------------------------------------------------------------
+// REAKSI & APRESIASI EMOJI
+// -------------------------------------------------------------
+model Reaction {
+  id          String        @id @default(cuid())
+  postId      String
+  userId      String
+  tipe        ReactionMode
+  createdAt   DateTime      @default(now())
+
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 1 Siswa hanya boleh memberi 1 reaksi pada 1 karya
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+// -------------------------------------------------------------
+// KOMENTAR KARYA
+// -------------------------------------------------------------
+model Comment {
+  id          String    @id @default(cuid())
+  postId      String
+  authorId    String
+  isi         String    @db.VarChar(1000)
+  createdAt   DateTime  @default(now())
+
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+// -------------------------------------------------------------
+// KURASI & PENILAIAN GURU
+// -------------------------------------------------------------
+model Grade {
+  id          String    @id @default(cuid())
+  postId      String    @unique // 1 Karya hanya memiliki 1 penilaian kurasi resmi
+  guruId      String
+  skor        Int       @default(85)
+  catatan     String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  guru        User      @relation("GuruGrades", fields: [guruId], references: [id], onDelete: Cascade)
+
+  @@index([guruId])
+}
+
+// -------------------------------------------------------------
+// BOOKMARK / KARYA DISIMPAN
+// -------------------------------------------------------------
+model Bookmark {
+  id          String    @id @default(cuid())
+  userId      String
+  postId      String
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// LOG BUKU BACAAN SISWA (READING LOG)
+// -------------------------------------------------------------
+model ReadingBook {
+  id              String        @id @default(cuid())
+  userId          String
+  judul           String        @db.VarChar(200)
+  penulis         String        @db.VarChar(150)
+  totalHalaman    Int           @default(100)
+  halamanDibaca   Int           @default(0)
+  status          ReadingStatus @default(SEDANG_DIBACA)
+  catatan         String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// PERIODE MINGGU LITERASI
+// -------------------------------------------------------------
+model MingguLiterasiPeriod {
+  id                  String    @id @default(cuid())
+  nama                String    // Contoh: "Minggu Literasi Ke-3 September"
+  tema                String
+  tanggalMulai        DateTime
+  tanggalSelesai      DateTime
+  kategoriIdWajib     String?
+  isActive            Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+
+  posts               Post[]
+}
+
+// -------------------------------------------------------------
+// KATALOG PERPUSTAKAAN MADRASAH
+// -------------------------------------------------------------
+model LibraryBook {
+  id            String    @id @default(cuid())
+  judul         String    @db.VarChar(200)
+  penulis       String    @db.VarChar(150)
+  kategori      String
+  isbn          String?
+  stok          Int       @default(1)
+  lokasiRak     String?
+  coverUrl      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// -------------------------------------------------------------
+// AUDIT LOG (ADMIN & KEAMANAN)
+// -------------------------------------------------------------
+model AuditLog {
+  id          String    @id @default(cuid())
+  adminId     String?
+  admin       User?     @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  aksi        String    // "TAMBAH_USER", "HAPUS_KARYA", dll
+  keterangan  String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt(sort: Desc)])
+}
