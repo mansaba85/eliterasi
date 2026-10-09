@@ -106,25 +106,6 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ach-5', nama: 'Master Literasi', deskripsi: 'Mencapai total 500 poin di web', ikon: '👑', kriteria: 'Mendapat total 500 poin', poinDibutuhkan: 500 },
 ];
 
-// Auto-clean legacy mock posts and challenges from browser localStorage on initial update (preserve users and settings!)
-if (typeof window !== 'undefined') {
-  try {
-    const CLEAN_KEY = 'eliterasi_clean_data_20261009';
-    if (!localStorage.getItem(CLEAN_KEY)) {
-      localStorage.removeItem('eliterasi_posts');
-      localStorage.removeItem('eliterasi_periods');
-      localStorage.removeItem('eliterasi_classes');
-      localStorage.removeItem('eliterasi_challenges');
-      localStorage.removeItem('eliterasi_announcements');
-      localStorage.removeItem('eliterasi_reading_books');
-      localStorage.removeItem('eliterasi_library_books');
-      localStorage.removeItem('eliterasi_certificates');
-      localStorage.removeItem('eliterasi_audit_logs');
-      localStorage.setItem(CLEAN_KEY, 'true');
-    }
-  } catch (_) {}
-}
-
 export class LiteStore {
   private static getStored<T>(key: string, defaultValue: T): T {
     if (typeof window === 'undefined') return defaultValue;
@@ -145,6 +126,14 @@ export class LiteStore {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(`eliterasi_${key}`, JSON.stringify(value));
+      // Sinkronisasi otomatis ke volume persisten server secara asinkron
+      fetch('/api/store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+      }).catch(() => {
+        // Safe fallback jika offline atau server loading
+      });
     } catch (e) {
       console.error(e);
     }
@@ -311,6 +300,110 @@ export class LiteStore {
     this.saveLibraryBooks(INITIAL_LIBRARY_BOOKS);
     this.saveCertificates(INITIAL_CERTIFICATES);
     this.saveAuditLogs(INITIAL_AUDIT_LOGS);
+  }
+
+  // Sinkronisasi dengan Volume Persisten Server Docker
+  static async initFromServer(): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    try {
+      const res = await fetch('/api/store', { cache: 'no-store' });
+      if (!res.ok) return false;
+      const json = await res.json();
+      if (!json.success) return false;
+
+      if (json.data && typeof json.data === 'object' && Object.keys(json.data).length > 0) {
+        const data = json.data;
+        const keys = [
+          'users', 'posts', 'periods', 'classes', 'categories', 
+          'challenges', 'reading_books', 'announcements', 
+          'school_settings', 'library_books', 'certificates', 
+          'audit_logs', 'admin_password'
+        ];
+        let loadedCount = 0;
+        for (const k of keys) {
+          if (data[k] !== undefined && data[k] !== null) {
+            localStorage.setItem(`eliterasi_${k}`, JSON.stringify(data[k]));
+            loadedCount++;
+          }
+        }
+        return loadedCount > 0;
+      } else {
+        // Jika server belum memiliki berkas eliterasi_store.json, dorong data lokal saat ini
+        const localBackup = this.getFullBackup();
+        const hasCustomData = Boolean(
+          localBackup.admin_password || 
+          localBackup.classes.length > 0 || 
+          localBackup.posts.length > 0 ||
+          (localBackup.school_settings && localBackup.school_settings.namaMadrasah)
+        );
+        if (hasCustomData) {
+          fetch('/api/store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullStore: localBackup })
+          }).catch(() => {});
+        }
+        return false;
+      }
+    } catch (err) {
+      console.warn('[LiteStore] Gagal sinkronisasi data dari server:', err);
+      return false;
+    }
+  }
+
+  // Fitur Cadangan Data Utuh (Backup & Restore)
+  static getFullBackup() {
+    return {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      users: this.getUsers(),
+      posts: this.getPosts(),
+      periods: this.getPeriods(),
+      classes: this.getClasses(),
+      categories: this.getCategories(),
+      challenges: this.getChallenges(),
+      reading_books: this.getReadingBooks(),
+      announcements: this.getAnnouncements(),
+      school_settings: this.getSchoolSettings(),
+      library_books: this.getLibraryBooks(),
+      certificates: this.getCertificates(),
+      audit_logs: this.getAuditLogs(),
+      admin_password: this.getStored<string>('admin_password', '')
+    };
+  }
+
+  static restoreBackup(data: any): boolean {
+    if (!data || typeof data !== 'object') return false;
+    try {
+      if (data.users && Array.isArray(data.users)) this.saveUsers(data.users);
+      if (data.posts && Array.isArray(data.posts)) this.savePosts(data.posts);
+      if (data.periods && Array.isArray(data.periods)) this.savePeriods(data.periods);
+      if (data.classes && Array.isArray(data.classes)) this.saveClasses(data.classes);
+      if (data.categories && Array.isArray(data.categories)) this.saveCategories(data.categories);
+      if (data.challenges && Array.isArray(data.challenges)) this.saveChallenges(data.challenges);
+      if (data.reading_books && Array.isArray(data.reading_books)) this.saveReadingBooks(data.reading_books);
+      if (data.announcements && Array.isArray(data.announcements)) this.saveAnnouncements(data.announcements);
+      if (data.school_settings && typeof data.school_settings === 'object') this.saveSchoolSettings(data.school_settings);
+      if (data.library_books && Array.isArray(data.library_books)) this.saveLibraryBooks(data.library_books);
+      if (data.certificates && Array.isArray(data.certificates)) this.saveCertificates(data.certificates);
+      if (data.audit_logs && Array.isArray(data.audit_logs)) this.saveAuditLogs(data.audit_logs);
+      if (data.admin_password && typeof data.admin_password === 'string') {
+        this.setStored('admin_password', data.admin_password);
+      }
+
+      // Sync langsung ke server persistent volume
+      if (typeof window !== 'undefined') {
+        fetch('/api/store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullStore: data })
+        }).catch(console.error);
+      }
+      return true;
+    } catch (e) {
+      console.error('Gagal memulihkan cadangan:', e);
+      return false;
+    }
   }
 
   // Mutators

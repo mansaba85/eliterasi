@@ -5,7 +5,8 @@ import { SchoolSettings } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
 import { 
   Building2, Sparkles, Sliders, CheckCircle, Save, RotateCcw, 
-  UserCheck, Shield, HelpCircle, Lock, Key, Eye, EyeOff, AlertCircle
+  UserCheck, Shield, HelpCircle, Lock, Key, Eye, EyeOff, AlertCircle,
+  Download, Upload, Database, HardDrive
 } from 'lucide-react';
 
 interface TabPengaturanSekolahProps {
@@ -44,6 +45,58 @@ export default function TabPengaturanSekolah({ onSettingsSaved }: TabPengaturanS
   const [showPassword, setShowPassword] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Backup & Restore
+  const [backupMsg, setBackupMsg] = useState('');
+  const [backupError, setBackupError] = useState('');
+
+  const handleDownloadBackup = () => {
+    try {
+      const data = LiteStore.getFullBackup();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `backup_eliterasi_manu01_${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupMsg('Cadangan JSON lengkap berhasil diunduh ke komputer Anda!');
+      setTimeout(() => setBackupMsg(''), 5000);
+    } catch (err: any) {
+      setBackupError('Gagal mengunduh cadangan: ' + err.message);
+    }
+  };
+
+  const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBackupMsg('');
+    setBackupError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        const ok = LiteStore.restoreBackup(json);
+        if (ok) {
+          setBackupMsg('Data cadangan berhasil dipulihkan dan disinkronkan ke server!');
+          if (onSettingsSaved) onSettingsSaved();
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          setBackupError('Format berkas JSON cadangan tidak valid.');
+        }
+      } catch (err: any) {
+        setBackupError('Gagal memproses berkas cadangan: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const handleChangeAdminPassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -429,6 +482,60 @@ export default function TabPengaturanSekolah({ onSettingsSaved }: TabPengaturanS
               <Key className="w-3.5 h-3.5" />
               <span>Simpan Kata Sandi Baru</span>
             </button>
+          </div>
+        </div>
+
+        {/* Section 4: Cadangan & Keamanan Data (Backup & Restore Anti-Hilang) */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+              <Database className="w-4 h-4 text-emerald-700" />
+              4. Keamanan & Cadangan Data Sistem (Anti-Hilang)
+            </h4>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[11px] font-bold border border-emerald-200">
+              <HardDrive className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Penyimpanan Server Persisten Aktif</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Data identitas madrasah, password administrator, daftar kelas, siswa, guru, kategori, dan karya otomatis tersimpan permanen di volume server (<strong>/app/public/uploads/eliterasi_store.json</strong>) dan tidak akan terhapus meskipun container di-redeploy atau di-restart di Portainer.
+          </p>
+
+          {backupMsg && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 text-xs font-bold p-3 rounded-xl border border-emerald-200">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{backupMsg}</span>
+            </div>
+          )}
+
+          {backupError && (
+            <div className="flex items-center gap-2 bg-rose-50 text-rose-800 text-xs font-bold p-3 rounded-xl border border-rose-200">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{backupError}</span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleDownloadBackup}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-emerald-300" />
+              <span>Unduh Cadangan Lengkap (.json)</span>
+            </button>
+
+            <label className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all flex items-center gap-2 cursor-pointer">
+              <Upload className="w-4 h-4 text-slate-500" />
+              <span>Pulihkan Data dari Berkas (.json)</span>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleRestoreFile}
+                className="hidden"
+              />
+            </label>
           </div>
         </div>
 

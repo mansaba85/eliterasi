@@ -37,7 +37,7 @@ async function init() {
   for (const cat of categories) {
     await prisma.category.upsert({
       where: { kode: cat.kode },
-      update: { nama: cat.nama, ikon: cat.ikon, deskripsi: cat.deskripsi },
+      update: {},
       create: cat,
     });
   }

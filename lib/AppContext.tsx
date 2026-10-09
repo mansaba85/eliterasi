@@ -83,6 +83,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     syncAll();
     setMounted(true);
+
+    // Sinkronisasi otomatis dari volume persisten server Next.js/Docker
+    LiteStore.initFromServer().then((hasServerData) => {
+      if (hasServerData) {
+        syncAll();
+      }
+    });
   }, []);
 
   const loginSiswa = (nis: string, tanggalLahir: string): boolean => {
