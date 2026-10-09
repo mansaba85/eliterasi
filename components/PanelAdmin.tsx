@@ -128,7 +128,12 @@ export default function PanelAdmin({
   const [catNama, setCatNama] = useState('');
   const [catKode, setCatKode] = useState('');
   const [catIkon, setCatIkon] = useState('📝');
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Category Edit Modal State
+  const [editingCategoryModal, setEditingCategoryModal] = useState<Category | null>(null);
+  const [editModalNama, setEditModalNama] = useState('');
+  const [editModalKode, setEditModalKode] = useState('');
+  const [editModalIkon, setEditModalIkon] = useState('📝');
 
   const [annJudul, setAnnJudul] = useState('');
   const [annIsi, setAnnIsi] = useState('');
@@ -179,36 +184,37 @@ export default function PanelAdmin({
     if (onRefreshData) onRefreshData();
   };
 
-  const handleCategoryFormSubmit = (e: React.FormEvent) => {
+  const handleCreateCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!catNama.trim() || !catKode.trim()) return;
 
-    if (editingCategory) {
-      onUpdateCategory(editingCategory.id, {
-        nama: catNama.trim(),
-        kode: catKode.trim(),
-        ikon: catIkon
-      });
-      setEditingCategory(null);
-      setCatNama('');
-      setCatKode('');
-      setCatIkon('📝');
-      alert('Kategori literasi berhasil diperbarui!');
-    } else {
-      onCreateCategory(catNama.trim(), catKode.trim(), catIkon);
-      setCatNama('');
-      setCatKode('');
-      setCatIkon('📝');
-      alert('Kategori literasi baru berhasil didaftarkan!');
-    }
-    if (onRefreshData) onRefreshData();
-  };
-
-  const handleCancelEditCategory = () => {
-    setEditingCategory(null);
+    onCreateCategory(catNama.trim(), catKode.trim(), catIkon);
     setCatNama('');
     setCatKode('');
     setCatIkon('📝');
+    alert('Kategori literasi baru berhasil didaftarkan!');
+    if (onRefreshData) onRefreshData();
+  };
+
+  const handleOpenEditCategoryModal = (cat: Category) => {
+    setEditingCategoryModal(cat);
+    setEditModalNama(cat.nama);
+    setEditModalKode(cat.kode);
+    setEditModalIkon(cat.ikon);
+  };
+
+  const handleSaveEditCategoryModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategoryModal || !editModalNama.trim() || !editModalKode.trim()) return;
+
+    onUpdateCategory(editingCategoryModal.id, {
+      nama: editModalNama.trim(),
+      kode: editModalKode.trim(),
+      ikon: editModalIkon
+    });
+    setEditingCategoryModal(null);
+    alert('Kategori literasi berhasil diperbarui!');
+    if (onRefreshData) onRefreshData();
   };
 
   const handleAddAnnouncementSubmit = (e: React.FormEvent) => {
@@ -1181,33 +1187,16 @@ export default function PanelAdmin({
           {/* ============================================================ */}
           {currentTab === 'kategori' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Form Tambah Kategori Baru */}
               <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    {editingCategory ? (
-                      <>
-                        <Pencil className="w-4 h-4 text-blue-600" /> Edit Kategori Naskah
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 text-emerald-800" /> Tambah Kategori Baru
-                      </>
-                    )}
+                    <Plus className="w-4 h-4 text-emerald-800" /> Tambah Kategori Baru
                   </h3>
-                  {editingCategory ? (
-                    <button
-                      type="button"
-                      onClick={handleCancelEditCategory}
-                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" /> Batal
-                    </button>
-                  ) : (
-                    <span className="text-[10px] text-slate-400">Master Data</span>
-                  )}
+                  <span className="text-[10px] text-slate-400">Master Data</span>
                 </div>
 
-                <form onSubmit={handleCategoryFormSubmit} className="space-y-4">
+                <form onSubmit={handleCreateCategorySubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">Nama Kategori</label>
                     <input 
@@ -1255,38 +1244,16 @@ export default function PanelAdmin({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button 
-                      type="submit" 
-                      className={`flex-1 py-3 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                        editingCategory 
-                          ? 'bg-blue-600 hover:bg-blue-700' 
-                          : 'bg-emerald-800 hover:bg-emerald-900'
-                      }`}
-                    >
-                      {editingCategory ? (
-                        <>
-                          <CheckCircle className="w-4 h-4" /> Simpan Perubahan
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-4 h-4" /> Daftarkan Kategori
-                        </>
-                      )}
-                    </button>
-                    {editingCategory && (
-                      <button
-                        type="button"
-                        onClick={handleCancelEditCategory}
-                        className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
-                      >
-                        Batal
-                      </button>
-                    )}
-                  </div>
+                  <button 
+                    type="submit" 
+                    className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" /> Daftarkan Kategori
+                  </button>
                 </form>
               </div>
 
+              {/* Tabel Daftar Kategori */}
               <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm">
                 <div className="p-4 sm:p-5 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
                   <div>
@@ -1312,12 +1279,7 @@ export default function PanelAdmin({
                     </thead>
                     <tbody className="text-xs text-slate-600 divide-y divide-slate-100">
                       {categories.map(cat => (
-                        <tr 
-                          key={cat.id} 
-                          className={`hover:bg-slate-50/60 transition-colors ${
-                            editingCategory?.id === cat.id ? 'bg-blue-50/70 ring-1 ring-blue-300' : ''
-                          }`}
-                        >
+                        <tr key={cat.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="p-4 text-xl select-none">{cat.ikon}</td>
                           <td className="p-4 font-bold text-slate-900">{cat.nama}</td>
                           <td className="p-4 font-mono text-slate-500 text-[11px]">{cat.kode}</td>
@@ -1334,21 +1296,12 @@ export default function PanelAdmin({
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              {/* Edit Button */}
+                              {/* Edit Modal Button */}
                               <button 
                                 type="button"
-                                onClick={() => {
-                                  setEditingCategory(cat);
-                                  setCatNama(cat.nama);
-                                  setCatKode(cat.kode);
-                                  setCatIkon(cat.ikon);
-                                }}
+                                onClick={() => handleOpenEditCategoryModal(cat)}
                                 title="Edit Nama, Kode & Ikon Kategori"
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center gap-1 ${
-                                  editingCategory?.id === cat.id
-                                    ? 'bg-blue-600 text-white shadow-xs'
-                                    : 'text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200'
-                                }`}
+                                className="px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center gap-1 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200"
                               >
                                 <Pencil className="w-3 h-3" /> Edit
                               </button>
@@ -1377,8 +1330,8 @@ export default function PanelAdmin({
                                     if (onDeleteCategory) {
                                       onDeleteCategory(cat.id);
                                     }
-                                    if (editingCategory?.id === cat.id) {
-                                      handleCancelEditCategory();
+                                    if (editingCategoryModal?.id === cat.id) {
+                                      setEditingCategoryModal(null);
                                     }
                                     if (onRefreshData) onRefreshData();
                                   }
@@ -1396,6 +1349,109 @@ export default function PanelAdmin({
                   </table>
                 </div>
               </div>
+
+              {/* ============================================================== */}
+              {/* MODAL POPUP: EDIT KATEGORI NASKAH LITERASI                    */}
+              {/* ============================================================== */}
+              {editingCategoryModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+                  <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-5 animate-scale-up border border-slate-100">
+                    {/* Header Modal */}
+                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                          <Pencil className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-slate-900 text-base">Edit Kategori Naskah</h3>
+                          <p className="text-xs text-slate-400">Ubah nama, kode slug, atau emoji ikon kategori</p>
+                        </div>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setEditingCategoryModal(null)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveEditCategoryModal} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Nama Kategori</label>
+                        <input 
+                          type="text" 
+                          required 
+                          placeholder="Misal: Opini Islami, Resensi Buku" 
+                          value={editModalNama} 
+                          onChange={(e) => setEditModalNama(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Kode Unik (Slug)</label>
+                        <input 
+                          type="text" 
+                          required 
+                          placeholder="Misal: opini-islami" 
+                          value={editModalKode} 
+                          onChange={(e) => setEditModalKode(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">Ikon Emoji</label>
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="text" 
+                            required 
+                            maxLength={4}
+                            value={editModalIkon} 
+                            onChange={(e) => setEditModalIkon(e.target.value)}
+                            className="w-16 px-3 py-2 border border-slate-200 rounded-xl text-2xl text-center outline-none focus:border-blue-600"
+                          />
+                          <div className="flex flex-wrap gap-1.5">
+                            {['📝', '📖', '📚', '✍️', '🌸', '🔬', '💡', '📰', '🧚', '🕌', '🌟', '🌱'].map(emoji => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => setEditModalIkon(emoji)}
+                                className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center cursor-pointer transition-colors ${
+                                  editModalIkon === emoji 
+                                    ? 'bg-blue-600 text-white shadow-xs' 
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                                }`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Modal Actions */}
+                      <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategoryModal(null)}
+                          className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Simpan Perubahan</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
