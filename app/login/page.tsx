@@ -262,8 +262,8 @@ export default function LoginPage() {
                     onClick={() => {
                       setLoginRole('siswa');
                       setStudentNis('2024001');
-                      setStudentBirthDate('14/09/2008');
-                      const success = loginSiswa('2024001', '14/09/2008');
+                      setStudentBirthDate('14092008');
+                      const success = loginSiswa('2024001', '14092008');
                       if (success) router.push('/');
                     }}
                     className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold transition-colors cursor-pointer"

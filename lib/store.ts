@@ -45,11 +45,11 @@ const INITIAL_CLASSES: Class[] = [
 // Initial Users
 const INITIAL_USERS: User[] = [
   // Students
-  { id: 'usr-sis-1', nis: '2024001', nama: 'Naila Azzahra', tanggalLahir: '14/09/2008', kelasId: 'cls-1', kelasNama: 'XII IPA 1', role: 'siswa', bio: 'Suka membaca dan menulis puisi. Bermimpi jadi penulis profesional suatu hari nanti.', poin: 1240, createdAt: '2026-08-01T08:00:00Z' },
-  { id: 'usr-sis-2', nis: '12345', nama: 'Siti Maryam', tanggalLahir: '17/08/2010', kelasId: 'cls-2', kelasNama: 'XI IPA 1', role: 'siswa', bio: 'Suka menulis cerpen tentang kehidupan sehari-hari.', poin: 2100, createdAt: '2026-08-01T08:15:00Z' },
-  { id: 'usr-sis-3', nis: '12346', nama: 'Dewi Rahmawati', tanggalLahir: '12/12/2009', kelasId: 'cls-3', kelasNama: 'XI IPS 1', role: 'siswa', bio: 'Senang membaca dan menulis puisi indah.', poin: 1560, createdAt: '2026-08-02T09:00:00Z' },
-  { id: 'usr-sis-4', nis: '12347', nama: 'Ahmad Fauzi', tanggalLahir: '01/01/2010', kelasId: 'cls-4', kelasNama: 'XII IPA 2', role: 'siswa', bio: 'Menulis artikel opini ilmiah adalah kegemaran saya.', poin: 980, createdAt: '2026-08-01T08:30:00Z' },
-  { id: 'usr-sis-5', nis: '12348', nama: 'Rizky Maulana', tanggalLahir: '20/10/2010', kelasId: 'cls-5', kelasNama: 'X IPA 3', role: 'siswa', bio: 'Masih belajar menulis di madrasah.', poin: 340, createdAt: '2026-08-05T14:20:00Z' },
+  { id: 'usr-sis-1', nis: '2024001', nama: 'Naila Azzahra', tanggalLahir: '14092008', kelasId: 'cls-1', kelasNama: 'XII IPA 1', role: 'siswa', bio: 'Suka membaca dan menulis puisi. Bermimpi jadi penulis profesional suatu hari nanti.', poin: 1240, createdAt: '2026-08-01T08:00:00Z' },
+  { id: 'usr-sis-2', nis: '12345', nama: 'Siti Maryam', tanggalLahir: '17082010', kelasId: 'cls-2', kelasNama: 'XI IPA 1', role: 'siswa', bio: 'Suka menulis cerpen tentang kehidupan sehari-hari.', poin: 2100, createdAt: '2026-08-01T08:15:00Z' },
+  { id: 'usr-sis-3', nis: '12346', nama: 'Dewi Rahmawati', tanggalLahir: '12122009', kelasId: 'cls-3', kelasNama: 'XI IPS 1', role: 'siswa', bio: 'Senang membaca dan menulis puisi indah.', poin: 1560, createdAt: '2026-08-02T09:00:00Z' },
+  { id: 'usr-sis-4', nis: '12347', nama: 'Ahmad Fauzi', tanggalLahir: '01012010', kelasId: 'cls-4', kelasNama: 'XII IPA 2', role: 'siswa', bio: 'Menulis artikel opini ilmiah adalah kegemaran saya.', poin: 980, createdAt: '2026-08-01T08:30:00Z' },
+  { id: 'usr-sis-5', nis: '12348', nama: 'Rizky Maulana', tanggalLahir: '20102010', kelasId: 'cls-5', kelasNama: 'X IPA 3', role: 'siswa', bio: 'Masih belajar menulis di madrasah.', poin: 340, createdAt: '2026-08-05T14:20:00Z' },
   
   // Teachers
   { id: 'usr-guru-1', username: 'guru1', nama: 'Pak Slamet Wibowo, S.Pd.', role: 'guru', bio: 'Guru / Pembimbing Literasi & Guru Bahasa Indonesia. Pembina Klub Literasi Madrasah.', poin: 0, createdAt: '2026-08-01T07:00:00Z' },
@@ -614,14 +614,28 @@ export class LiteStore {
       this.saveUsers(INITIAL_USERS);
       return INITIAL_USERS;
     }
-    const existingIds = new Set(stored.map(u => u.id));
+
+    // Auto-clean: jika ada user (termasuk mock user lama) yang tanggalLahir-nya masih mengandung '/', normalkan ke 8 digit
+    let hasChanges = false;
+    const sanitized = stored.map(u => {
+      if (u.role === 'siswa' && u.tanggalLahir && u.tanggalLahir.includes('/')) {
+        hasChanges = true;
+        return {
+          ...u,
+          tanggalLahir: u.tanggalLahir.replace(/[-/]/g, '').trim()
+        };
+      }
+      return u;
+    });
+
+    const existingIds = new Set(sanitized.map(u => u.id));
     const missing = INITIAL_USERS.filter(u => !existingIds.has(u.id));
-    if (missing.length > 0) {
-      const merged = [...stored, ...missing];
+    if (missing.length > 0 || hasChanges) {
+      const merged = [...sanitized, ...missing];
       this.saveUsers(merged);
       return merged;
     }
-    return stored;
+    return sanitized;
   }
 
   static getPosts(): Post[] {
