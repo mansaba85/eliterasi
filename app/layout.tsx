@@ -38,12 +38,6 @@ export const metadata: Metadata = {
     siteName: 'E-Literasi MA NU 01 Banyuputih',
     images: [
       {
-        url: '/eliterasi_branding.png',
-        width: 1200,
-        height: 630,
-        alt: 'E-Literasi MA NU 01 Banyuputih',
-      },
-      {
         url: '/eliterasi.png',
         width: 512,
         height: 512,
@@ -54,10 +48,10 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'E-Literasi MA NU 01 Banyuputih',
     description: 'Aplikasi literasi digital terintegrasi untuk siswa, guru, dan admin di MA NU 01 Banyuputih.',
-    images: ['/eliterasi_branding.png'],
+    images: ['/eliterasi.png'],
   },
 };
 
