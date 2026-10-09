@@ -17,8 +17,14 @@ export const viewport: Viewport = {
   themeColor: '#132257',
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://eliterasi.manu01banyuputih.sch.id';
+
 export const metadata: Metadata = {
-  title: 'E-Literasi MA NU 01 Banyuputih',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'E-Literasi MA NU 01 Banyuputih',
+    template: '%s | E-Literasi MA NU 01 Banyuputih',
+  },
   description: 'Aplikasi literasi digital terintegrasi untuk siswa, guru, dan admin di MA NU 01 Banyuputih. Kelola aktivitas literasi, catat tulisan harian, resensi buku, cerpen, puisi, dan laporan pengamatan secara terstruktur.',
   icons: {
     icon: '/eliterasi.png',
@@ -28,8 +34,24 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'E-Literasi MA NU 01 Banyuputih',
     description: 'Aplikasi literasi digital terintegrasi untuk siswa, guru, dan admin di MA NU 01 Banyuputih.',
+    url: '/',
+    siteName: 'E-Literasi MA NU 01 Banyuputih',
+    images: [
+      {
+        url: '/eliterasi_branding.png',
+        width: 1200,
+        height: 630,
+        alt: 'E-Literasi MA NU 01 Banyuputih',
+      },
+      {
+        url: '/eliterasi.png',
+        width: 512,
+        height: 512,
+        alt: 'Logo E-Literasi MA NU 01 Banyuputih',
+      },
+    ],
+    locale: 'id_ID',
     type: 'website',
-    images: ['/eliterasi_branding.png'],
   },
   twitter: {
     card: 'summary_large_image',
