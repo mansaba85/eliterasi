@@ -63,5 +63,8 @@ async function init() {
 init().catch(console.error).finally(() => prisma.$disconnect());
 '
 
+# Pastikan direktori uploads persisten ada dan siap digunakan
+mkdir -p /app/public/uploads
+
 echo "🎉 Memulai Server Next.js..."
 exec node server.js

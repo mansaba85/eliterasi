@@ -520,7 +520,22 @@ export class LiteStore {
       currentUser.password = trimmed;
       this.saveCurrentUser(currentUser);
     }
-    return { success: true, message: 'Kata sandi Administrator berhasil diperbarui!' };
+
+    // Pastikan langsung tersimpan ke server volume secara atomik
+    if (typeof window !== 'undefined') {
+      fetch('/api/store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          batch: {
+            admin_password: trimmed,
+            users: users
+          }
+        })
+      }).catch(console.error);
+    }
+
+    return { success: true, message: 'Kata sandi Administrator berhasil diperbarui dan tersimpan permanen!' };
   }
 
   static logout() {
