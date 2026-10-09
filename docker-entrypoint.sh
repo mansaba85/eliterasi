@@ -1,6 +1,18 @@
 #!/bin/sh
 set -e
 
+echo "⏳ Menunggu database PostgreSQL siap..."
+until node -e '
+  const { PrismaClient } = require("@prisma/client");
+  const prisma = new PrismaClient();
+  prisma.$connect()
+    .then(() => { process.exit(0); })
+    .catch(() => { process.exit(1); });
+' 2>/dev/null; do
+  echo "Database belum siap, mencoba lagi dalam 2 detik..."
+  sleep 2
+done
+
 echo "🚀 Menjalankan migrasi database PostgreSQL e-Literasi..."
 npx prisma db push --skip-generate
 

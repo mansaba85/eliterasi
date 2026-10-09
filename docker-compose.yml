@@ -32,7 +32,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: eliterasi_app:latest
     container_name: eliterasi_web
     restart: always
     depends_on:

@@ -13,12 +13,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Disable Next.js telemetry & Build standalone
+# Generate Prisma Client & Next.js Build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV DATABASE_URL="postgresql://eliterasi_user:eliterasi_password_manu01@localhost:5432/eliterasi_db?schema=public"
+
+RUN npx prisma generate
 RUN npm run build
 
 # Stage 3: Runner (Minimal Production Image)
@@ -40,9 +40,10 @@ RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+RUN sed -i 's/\r$//' ./docker-entrypoint.sh && chmod +x ./docker-entrypoint.sh
 
 USER nextjs
 
