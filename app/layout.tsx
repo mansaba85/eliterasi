@@ -17,7 +17,7 @@ export const viewport: Viewport = {
   themeColor: '#132257',
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://eliterasi.manu01banyuputih.sch.id';
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://eliterasi.manubanyuputih.id';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
