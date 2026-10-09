@@ -470,18 +470,18 @@ export default function TabDataSiswa({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Tanggal Lahir (PIN Login: DD/MM/YYYY) <span className="text-rose-500">*</span>
+                  Tanggal Lahir (PIN Login) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: 14/09/2008"
+                  placeholder="Contoh: 14/09/2008 atau 14092008"
                   value={tanggalLahir}
                   onChange={(e) => setTanggalLahir(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#132257]"
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
-                  Format tanggal lahir digunakan sebagai PIN siswa untuk masuk portal.
+                  Bisa dimasukkan dengan tanda miring (14/09/2008) atau 8 digit (14092008). Siswa dapat login cukup dengan 8 digit angka.
                 </span>
               </div>
 

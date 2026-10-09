@@ -166,7 +166,10 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700">Tanggal Lahir (DD/MM/YYYY)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">Tanggal Lahir (8 Digit)</label>
+                    <span className="text-[10px] text-slate-400 font-medium">Contoh: 10112010</span>
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <Calendar className="w-4 h-4" />
@@ -174,13 +177,16 @@ export default function LoginPage() {
                     <input 
                       type="text" 
                       required 
-                      placeholder="DD/MM/YYYY (contoh: 14/09/2008)" 
+                      maxLength={10}
+                      placeholder="8 digit angka (contoh: 14092008)" 
                       value={studentBirthDate} 
                       onChange={(e) => setStudentBirthDate(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-[#1e3bb3] focus:ring-1 focus:ring-[#1e3bb3] rounded-xl text-xs font-medium placeholder-slate-400 transition-all outline-none"
+                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-[#1e3bb3] focus:ring-1 focus:ring-[#1e3bb3] rounded-xl text-xs font-medium placeholder-slate-400 transition-all outline-none font-mono tracking-wider"
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">Gunakan format tanggal: Hari/Bulan/Tahun lahir Anda.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Cukup ketik 8 angka tanpa tanda miring <code>/</code> (DDMMYYYY). Contoh: <code>14092008</code> untuk 14 September 2008.
+                  </p>
                 </div>
 
                 {loginError && <p className="text-xs font-bold text-rose-600 leading-none">{loginError}</p>}
