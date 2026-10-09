@@ -106,7 +106,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ach-5', nama: 'Master Literasi', deskripsi: 'Mencapai total 500 poin di web', ikon: '👑', kriteria: 'Mendapat total 500 poin', poinDibutuhkan: 500 },
 ];
 
-// Auto-clean legacy mock data from browser localStorage on initial update
+// Auto-clean legacy mock posts and challenges from browser localStorage on initial update (preserve users and settings!)
 if (typeof window !== 'undefined') {
   try {
     const CLEAN_KEY = 'eliterasi_clean_data_20261009';
@@ -120,8 +120,6 @@ if (typeof window !== 'undefined') {
       localStorage.removeItem('eliterasi_library_books');
       localStorage.removeItem('eliterasi_certificates');
       localStorage.removeItem('eliterasi_audit_logs');
-      localStorage.removeItem('eliterasi_users');
-      localStorage.removeItem('eliterasi_current_user');
       localStorage.setItem(CLEAN_KEY, 'true');
     }
   } catch (_) {}
@@ -160,12 +158,17 @@ export class LiteStore {
       return INITIAL_USERS;
     }
 
-    // Pastikan akun admin utama selalu tersedia
-    const hasAdmin = stored.some(u => u.role === 'admin' || u.username === 'admin');
-    if (!hasAdmin) {
-      const merged = [INITIAL_USERS[0], ...stored];
+    // Pastikan akun admin utama selalu tersedia dengan password yang sinkron
+    const customAdminPass = this.getStored<string>('admin_password', '');
+    const adminUser = stored.find(u => u.role === 'admin' || u.username === 'admin');
+    if (!adminUser) {
+      const newAdmin = { ...INITIAL_USERS[0], password: customAdminPass || undefined };
+      const merged = [newAdmin, ...stored];
       this.saveUsers(merged);
       return merged;
+    } else if (customAdminPass && adminUser.password !== customAdminPass) {
+      adminUser.password = customAdminPass;
+      this.saveUsers(stored);
     }
     return stored;
   }
@@ -382,13 +385,19 @@ export class LiteStore {
       const isCorrectUser = u.username.toLowerCase() === username.toLowerCase().trim();
       if (!isCorrectUser) return false;
 
+      // Cek password kustom admin persisten
+      const customAdminPass = this.getStored<string>('admin_password', '');
+      if (u.role === 'admin' && customAdminPass) {
+        return password.trim() === customAdminPass;
+      }
+
       // Jika user sudah memiliki password kustom yang disimpan
       if (u.password) {
         return u.password === password.trim();
       }
 
       // Password default bawaan
-      if (u.role === 'admin' && password === 'admin123') return true;
+      if (u.role === 'admin' && !customAdminPass && password === 'admin123') return true;
       if (u.role === 'kepala_madrasah' && password === 'kepala123') return true;
       if (u.role === 'guru' && password === 'password123') return true;
 
@@ -403,17 +412,19 @@ export class LiteStore {
   }
 
   static updateAdminPassword(newPassword: string): { success: boolean; message: string } {
+    const trimmed = newPassword.trim();
+    this.setStored('admin_password', trimmed);
+
     const users = this.getUsers();
     const adminIndex = users.findIndex(u => u.role === 'admin' || u.username === 'admin');
-    if (adminIndex === -1) {
-      return { success: false, message: 'Akun Administrator tidak ditemukan.' };
+    if (adminIndex !== -1) {
+      users[adminIndex].password = trimmed;
+      this.saveUsers(users);
     }
-    users[adminIndex].password = newPassword.trim();
-    this.saveUsers(users);
 
     const currentUser = this.getCurrentUser();
     if (currentUser && (currentUser.role === 'admin' || currentUser.username === 'admin')) {
-      currentUser.password = newPassword.trim();
+      currentUser.password = trimmed;
       this.saveCurrentUser(currentUser);
     }
     return { success: true, message: 'Kata sandi Administrator berhasil diperbarui!' };
