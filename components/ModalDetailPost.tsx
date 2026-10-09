@@ -206,12 +206,23 @@ export default function ModalDetailPost({
     }
   };
 
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingComment) return;
     if (!commentText.trim() || !currentUser) return;
-    onComment(post.id, commentText.trim());
+
+    setIsSubmittingComment(true);
+    const textToSend = commentText.trim();
     setCommentText('');
     setReplyTo(null);
+    onComment(post.id, textToSend);
+
+    // Debounce guard to prevent rapid double-clicks or dual Enter + submit triggers
+    setTimeout(() => {
+      setIsSubmittingComment(false);
+    }, 600);
   };
 
   const handleSubmitGrade = (e: React.FormEvent) => {
@@ -679,7 +690,10 @@ export default function ModalDetailPost({
                     <p className="text-[10px] text-slate-400 mt-0.5">Mulai diskusi hangat pertama dengan santun!</p>
                   </div>
                 ) : (
-                  post.comments.map((comment, index) => {
+                  // Deduplicate comments by ID in case data has redundant entries
+                  post.comments
+                    .filter((comment, idx, self) => self.findIndex(c => c.id === comment.id) === idx)
+                    .map((comment, index) => {
                     // Generate premium pastel gradients for commentary initials
                     const gradients = [
                       'from-amber-400 to-orange-400',
@@ -695,13 +709,11 @@ export default function ModalDetailPost({
                     }
                     const avatarGrad = gradients[Math.abs(hash) % gradients.length];
                     const isCommentTeacher = comment.authorRole === 'guru';
-                    const hasMoreComments = index < post.comments.length - 1;
-
                     const isReply = comment.isi.trim().startsWith('@');
 
                     return (
                       <div 
-                        key={comment.id} 
+                        key={`${comment.id}-${index}`} 
                         className={`flex gap-2.5 transition-all duration-150 ${isReply ? 'ml-6 sm:ml-8 pl-2.5 border-l-2 border-slate-200' : ''}`}
                       >
                         {/* Left Column: Compact Avatar */}

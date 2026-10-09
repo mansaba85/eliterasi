@@ -1046,13 +1046,14 @@ export class LiteStore {
     if (index === -1) return null;
 
     const newComment: Comment = {
-      id: `comment-${Date.now()}`,
+      id: `comment-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       postId,
       ...data,
       createdAt: new Date().toISOString()
     };
 
-    posts[index].comments.push(newComment);
+    const currentComments = Array.isArray(posts[index].comments) ? posts[index].comments : [];
+    posts[index].comments = [...currentComments, newComment];
     this.savePosts(posts);
 
     // Tambahkan poin ke pembuat komentar (+1 poin) dan pembuat tulisan (+1 poin)

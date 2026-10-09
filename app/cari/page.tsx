@@ -243,10 +243,17 @@ function CariContent() {
           onComment={(id, text) => {
             const newComment = commentPost(id, text);
             if (newComment) {
-              setSelectedPost(prev => prev && prev.id === id ? {
-                ...prev,
-                comments: [...prev.comments, newComment]
-              } : prev);
+              setSelectedPost(prev => {
+                if (!prev || prev.id !== id) return prev;
+                const currentComments = Array.isArray(prev.comments) ? prev.comments : [];
+                if (currentComments.some(c => c.id === newComment.id)) {
+                  return prev;
+                }
+                return {
+                  ...prev,
+                  comments: [...currentComments, newComment]
+                };
+              });
             }
           }}
           onReact={(id, type) => {

@@ -155,9 +155,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (newComment) {
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
+          const currentComments = Array.isArray(p.comments) ? p.comments : [];
+          if (currentComments.some(c => c.id === newComment.id)) {
+            return p;
+          }
           return {
             ...p,
-            comments: [...p.comments, newComment]
+            comments: [...currentComments, newComment]
           };
         }
         return p;
