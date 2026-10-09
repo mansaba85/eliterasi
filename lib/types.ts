@@ -106,6 +106,8 @@ export interface Challenge {
   tanggalSelesai: string;
   createdBy: string;
   peserta: string[]; // array of userIds
+  selesaikanPeserta?: string[]; // array of userIds yang sudah menyelesaikan tantangan
+  targetKarya?: number; // target jumlah karya untuk menyelesaikan (default 1)
   poinBonus: number;
   coverImage?: string;
 }

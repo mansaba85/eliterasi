@@ -48,6 +48,7 @@ interface AppContextType {
   updateReadingBookStatus: (id: string, status: any) => void;
   deleteReadingBook: (id: string) => void;
   joinChallenge: (challengeId: string) => void;
+  completeChallenge: (challengeId: string) => { success: boolean; poin: number; message: string };
 
   // Sync
   refreshData: () => void;
@@ -222,6 +223,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     syncAll();
   };
 
+  const completeChallenge = (challengeId: string) => {
+    if (!currentUser) return { success: false, poin: 0, message: 'Silakan login terlebih dahulu.' };
+    const res = LiteStore.completeChallenge(challengeId, currentUser.id);
+    if (res.success) {
+      syncAll();
+    }
+    return res;
+  };
+
   // Periode hanya dianggap aktif jika isActive = true DAN tanggal hari ini berada di antara tanggalMulai/tanggalPelaksanaan sampai tanggalSelesai
   const activePeriod = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
@@ -265,6 +275,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateReadingBookStatus,
         deleteReadingBook,
         joinChallenge,
+        completeChallenge,
         refreshData: syncAll,
       }}
     >

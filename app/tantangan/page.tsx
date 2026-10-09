@@ -28,6 +28,7 @@ export default function TantanganPage() {
     reactPost,
     gradePost,
     joinChallenge,
+    completeChallenge,
     addReadingBook,
     updateReadingBookStatus,
     deleteReadingBook,
@@ -80,6 +81,7 @@ export default function TantanganPage() {
           onReact={reactPost}
           onGrade={gradePost}
           onJoinChallenge={joinChallenge}
+          onCompleteChallenge={completeChallenge}
           onAddReadingBook={addReadingBook}
           onUpdateBookStatus={updateReadingBookStatus}
           onDeleteBook={deleteReadingBook}

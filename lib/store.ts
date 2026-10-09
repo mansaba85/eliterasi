@@ -1437,22 +1437,52 @@ export class LiteStore {
     challenge.peserta.push(userId);
     challenges[index] = challenge;
     this.saveChallenges(challenges);
+    return true;
+  }
 
-    // Tambah poin (+10 poin) karena ikut tantangan
+  static completeChallenge(challengeId: string, userId: string): { success: boolean; poin: number; message: string } {
+    const challenges = this.getChallenges();
+    const index = challenges.findIndex(c => c.id === challengeId);
+    if (index === -1) return { success: false, poin: 0, message: 'Tantangan tidak ditemukan.' };
+
+    const challenge = challenges[index];
+    if (!challenge.peserta.includes(userId)) {
+      return { success: false, poin: 0, message: 'Kamu belum bergabung dalam tantangan ini.' };
+    }
+
+    if (!challenge.selesaikanPeserta) {
+      challenge.selesaikanPeserta = [];
+    }
+
+    if (challenge.selesaikanPeserta.includes(userId)) {
+      return { success: false, poin: 0, message: 'Kamu sudah menyelesaikan tantangan ini dan reward poin telah dicairkan.' };
+    }
+
+    // Tandai selesai
+    challenge.selesaikanPeserta.push(userId);
+    challenges[index] = challenge;
+    this.saveChallenges(challenges);
+
+    // Berikan reward poin penuh tantangan
+    const bonusPoin = challenge.poinBonus || 50;
     const users = this.getUsers();
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
-      users[userIndex].poin += 10;
+      users[userIndex].poin += bonusPoin;
       this.saveUsers(users);
-      
+
       const currentUser = this.getCurrentUser();
       if (currentUser && currentUser.id === userId) {
-        currentUser.poin += 10;
+        currentUser.poin += bonusPoin;
         this.saveCurrentUser(currentUser);
       }
     }
 
-    return true;
+    return { 
+      success: true, 
+      poin: bonusPoin, 
+      message: `Selamat! Kamu berhasil menuntaskan tantangan "${challenge.judul}" dan memperoleh reward penuh +${bonusPoin} poin!` 
+    };
   }
 
   // Announcements (Admin)

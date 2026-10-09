@@ -1,6 +1,7 @@
 'use client';
 import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { User, Post, Category, Challenge, ReadingBook, MingguLiterasiPeriod, Class } from '../lib/types';
 import { 
   PenTool, BookOpen, Bookmark, Trophy, Calendar, Sparkles, Send, 
@@ -29,6 +30,7 @@ interface DashboardSiswaProps {
   onReact?: (postId: string, reactionType: 'kagum' | 'menginspirasi' | 'kreatif' | 'informatif') => void;
   onGrade?: (postId: string, score: number, feedback: string) => void;
   onJoinChallenge: (challengeId: string) => void;
+  onCompleteChallenge?: (challengeId: string) => { success: boolean; poin: number; message: string };
   onAddReadingBook: (book: any) => void;
   onUpdateBookStatus: (id: string, status: any) => void;
   onDeleteBook: (id: string) => void;
@@ -54,10 +56,12 @@ export default function DashboardSiswa({
   onReact,
   onGrade,
   onJoinChallenge,
+  onCompleteChallenge,
   onAddReadingBook,
   onUpdateBookStatus,
   onDeleteBook,
 }: DashboardSiswaProps) {
+  const router = useRouter();
   // --- STATE UNTUK EDITOR ---
   const [judul, setJudul] = useState('');
   const [isi, setIsi] = useState('');
@@ -1133,23 +1137,77 @@ export default function DashboardSiswa({
                     </div>
                   </div>
 
-                  <div className="p-5 pt-0 border-t border-slate-50 mt-auto flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 font-semibold">{chal.peserta.length} Siswa Berpartisipasi</span>
-                    
+                  <div className="p-5 pt-0 border-t border-slate-50 mt-auto flex flex-col gap-3">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                      <span>👥 {chal.peserta.length} Siswa Berpartisipasi</span>
+                      {isParticipating && (
+                        <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                          chal.selesaikanPeserta?.includes(currentUser.id)
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {chal.selesaikanPeserta?.includes(currentUser.id) ? '✅ Tuntas & Hadiah Diklaim' : '⏳ Misi Sedang Berjalan'}
+                        </span>
+                      )}
+                    </div>
+
                     {isParticipating ? (
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl flex items-center gap-1">
-                        <CheckCircle className="w-4 h-4 text-emerald-700" /> Sudah Bergabung
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {chal.selesaikanPeserta?.includes(currentUser.id) ? (
+                          <div className="w-full text-center py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center justify-center gap-1.5">
+                            <CheckCircle className="w-4 h-4 text-emerald-700" />
+                            <span>Misi Selesai (+{chal.poinBonus} Poin Telah Diterima)</span>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleResetEditor();
+                                setTagInput(chal.tema.toLowerCase().replace(/\s+/g, '-'));
+                                setJudul(`[Tantangan: ${chal.judul}] `);
+                                if (onNavigateTab) {
+                                  onNavigateTab('tulis');
+                                } else {
+                                  router.push('/tulis');
+                                }
+                              }}
+                              className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                            >
+                              <PenTool className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Setor Tulisan Misi</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onCompleteChallenge) {
+                                  const res = onCompleteChallenge(chal.id);
+                                  alert(res.message);
+                                }
+                              }}
+                              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-3.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                              title="Klaim reward setelah selesai menulis karya untuk tantangan ini"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                              <span>Klaim Hadiah</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
                     ) : (
-                      <button 
-                        onClick={() => {
-                          onJoinChallenge(chal.id);
-                          alert(`Selamat! Kamu berhasil mendaftar tantangan "${chal.judul}". Kamu mendapat +10 poin awal pendaftaran.`);
-                        }}
-                        className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all pressable cursor-pointer"
-                      >
-                        Ikuti Tantangan
-                      </button>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">Belum terdaftar</span>
+                        <button 
+                          onClick={() => {
+                            onJoinChallenge(chal.id);
+                            alert(`Bagus! Kamu resmi mendaftar tantangan "${chal.judul}". Sekarang, tuliskan karya dengan tema "${chal.tema}" lalu klaim reward bonus +${chal.poinBonus} poin setelah selesai!`);
+                          }}
+                          className="bg-[#132257] hover:bg-[#1d3580] text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs transition-all pressable cursor-pointer"
+                        >
+                          Daftar & Terima Tantangan
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
