@@ -5,7 +5,7 @@ import { SchoolSettings } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
 import { 
   Building2, Sparkles, Sliders, CheckCircle, Save, RotateCcw, 
-  UserCheck, Shield, HelpCircle
+  UserCheck, Shield, HelpCircle, Lock, Key, Eye, EyeOff, AlertCircle
 } from 'lucide-react';
 
 interface TabPengaturanSekolahProps {
@@ -37,6 +37,39 @@ export default function TabPengaturanSekolah({ onSettingsSaved }: TabPengaturanS
   const [multiplierNilaiGuru, setMultiplierNilaiGuru] = useState(currentSettings.poinSettings?.poinNilaiGuruMultiplier ?? 0.5);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Kata Sandi Admin
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [confirmAdminPassword, setConfirmAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleChangeAdminPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!newAdminPassword || newAdminPassword.trim().length < 6) {
+      setPasswordError('Password baru minimal harus 6 karakter.');
+      return;
+    }
+
+    if (newAdminPassword.trim() !== confirmAdminPassword.trim()) {
+      setPasswordError('Konfirmasi password tidak cocok dengan password baru.');
+      return;
+    }
+
+    const result = LiteStore.updateAdminPassword(newAdminPassword.trim());
+    if (result.success) {
+      setPasswordSuccess(result.message);
+      setNewAdminPassword('');
+      setConfirmAdminPassword('');
+      setTimeout(() => setPasswordSuccess(''), 4000);
+    } else {
+      setPasswordError(result.message);
+    }
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,6 +356,79 @@ export default function TabPengaturanSekolah({ onSettingsSaved }: TabPengaturanS
               </div>
               <p className="text-[10px] text-slate-400">Nilai 90 x 0.5 = +45 bonus poin bintang.</p>
             </div>
+          </div>
+        </div>
+
+        {/* Section 4: Keamanan & Kata Sandi Administrator */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+              <Lock className="w-4 h-4 text-rose-600" />
+              4. Keamanan Akun & Kata Sandi Administrator
+            </h4>
+            <span className="text-[11px] text-slate-400 font-medium">Username saat ini: <strong className="text-slate-700">admin</strong></span>
+          </div>
+
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Perbarui kata sandi akun Administrator utama untuk menjaga keamanan akses panel pengelolaan literasi madrasah.
+          </p>
+
+          {passwordSuccess && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 text-xs font-bold p-3 rounded-xl border border-emerald-200">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{passwordSuccess}</span>
+            </div>
+          )}
+
+          {passwordError && (
+            <div className="flex items-center gap-2 bg-rose-50 text-rose-800 text-xs font-bold p-3 rounded-xl border border-rose-200">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{passwordError}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">Kata Sandi Baru</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Minimal 6 karakter..."
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 pr-10 bg-slate-50/70 border border-slate-200 focus:bg-white focus:border-[#132257] rounded-xl text-xs font-medium text-slate-900 outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">Ulangi Kata Sandi Baru</label>
+              <input 
+                type={showPassword ? "text" : "password"}
+                placeholder="Ketik ulang kata sandi..."
+                value={confirmAdminPassword}
+                onChange={(e) => setConfirmAdminPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 focus:bg-white focus:border-[#132257] rounded-xl text-xs font-medium text-slate-900 outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleChangeAdminPassword}
+              className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Simpan Kata Sandi Baru</span>
+            </button>
           </div>
         </div>
 

@@ -376,18 +376,23 @@ export class LiteStore {
 
   static loginStaff(username: string, password: string): User | null {
     const users = this.getUsers();
-    // Di sini kita izinkan login guru1, guru2, guru3, admin, kepala dengan password default 'password123' atau 'admin123'/'kepala123'
     const staff = users.find(u => {
       if (u.role === 'siswa' || !u.username) return false;
       
       const isCorrectUser = u.username.toLowerCase() === username.toLowerCase().trim();
-      let isCorrectPass = false;
-      
-      if (u.role === 'admin' && password === 'admin123') isCorrectPass = true;
-      else if (u.role === 'kepala_madrasah' && password === 'kepala123') isCorrectPass = true;
-      else if (u.role === 'guru' && password === 'password123') isCorrectPass = true;
+      if (!isCorrectUser) return false;
 
-      return isCorrectUser && isCorrectPass;
+      // Jika user sudah memiliki password kustom yang disimpan
+      if (u.password) {
+        return u.password === password.trim();
+      }
+
+      // Password default bawaan
+      if (u.role === 'admin' && password === 'admin123') return true;
+      if (u.role === 'kepala_madrasah' && password === 'kepala123') return true;
+      if (u.role === 'guru' && password === 'password123') return true;
+
+      return false;
     });
 
     if (staff) {
@@ -395,6 +400,23 @@ export class LiteStore {
       return staff;
     }
     return null;
+  }
+
+  static updateAdminPassword(newPassword: string): { success: boolean; message: string } {
+    const users = this.getUsers();
+    const adminIndex = users.findIndex(u => u.role === 'admin' || u.username === 'admin');
+    if (adminIndex === -1) {
+      return { success: false, message: 'Akun Administrator tidak ditemukan.' };
+    }
+    users[adminIndex].password = newPassword.trim();
+    this.saveUsers(users);
+
+    const currentUser = this.getCurrentUser();
+    if (currentUser && (currentUser.role === 'admin' || currentUser.username === 'admin')) {
+      currentUser.password = newPassword.trim();
+      this.saveCurrentUser(currentUser);
+    }
+    return { success: true, message: 'Kata sandi Administrator berhasil diperbarui!' };
   }
 
   static logout() {
@@ -1096,9 +1118,10 @@ export class LiteStore {
 
     const targetUser = users[index];
     if (targetUser.role === 'siswa') {
-      targetUser.tanggalLahir = newPinOrPass; // tanggal lahir digunakan sebagai PIN siswa
+      targetUser.tanggalLahir = newPinOrPass.replace(/[-/]/g, '').trim(); // tanggal lahir digunakan sebagai PIN siswa
+    } else {
+      targetUser.password = newPinOrPass.trim();
     }
-    // Update user bio / memo note if necessary
     users[index] = targetUser;
     this.saveUsers(users);
 

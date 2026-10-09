@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   bio: string;
   fotoProfil?: string; // URL or letter avatar
+  password?: string; // for guru, admin, kepala_madrasah
   poin: number;
   createdAt: string;
 }
