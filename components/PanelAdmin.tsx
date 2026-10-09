@@ -17,7 +17,8 @@ import {
   BookOpen, ShieldAlert, Sparkles, CheckCircle, Search,
   Compass, ArrowRight, LayoutDashboard, Clock, AlertTriangle,
   Flame, CheckCircle2, ChevronRight, Menu, X, LogOut,
-  ExternalLink, ArrowUpRight, ShieldCheck, Download, GraduationCap
+  ExternalLink, ArrowUpRight, ShieldCheck, Download, GraduationCap,
+  Pencil
 } from 'lucide-react';
 
 export type AdminSubTab = 
@@ -51,6 +52,7 @@ interface PanelAdminProps {
   onSetPeriodActive: (id: string, active: boolean) => void;
   onCreateCategory: (nama: string, kode: string, ikon: string) => void;
   onUpdateCategory: (id: string, updates: any) => void;
+  onDeleteCategory?: (id: string) => void;
   onDeletePost: (id: string) => void;
   onUpdatePost: (id: string, updates: any) => void;
   onAddAnnouncement: (judul: string, isi: string) => void;
@@ -75,6 +77,7 @@ export default function PanelAdmin({
   onSetPeriodActive,
   onCreateCategory,
   onUpdateCategory,
+  onDeleteCategory,
   onDeletePost,
   onUpdatePost,
   onAddAnnouncement,
@@ -125,6 +128,7 @@ export default function PanelAdmin({
   const [catNama, setCatNama] = useState('');
   const [catKode, setCatKode] = useState('');
   const [catIkon, setCatIkon] = useState('📝');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const [annJudul, setAnnJudul] = useState('');
   const [annIsi, setAnnIsi] = useState('');
@@ -175,16 +179,36 @@ export default function PanelAdmin({
     if (onRefreshData) onRefreshData();
   };
 
-  const handleCreateCategorySubmit = (e: React.FormEvent) => {
+  const handleCategoryFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!catNama.trim() || !catKode.trim()) return;
 
-    onCreateCategory(catNama.trim(), catKode.trim(), catIkon);
+    if (editingCategory) {
+      onUpdateCategory(editingCategory.id, {
+        nama: catNama.trim(),
+        kode: catKode.trim(),
+        ikon: catIkon
+      });
+      setEditingCategory(null);
+      setCatNama('');
+      setCatKode('');
+      setCatIkon('📝');
+      alert('Kategori literasi berhasil diperbarui!');
+    } else {
+      onCreateCategory(catNama.trim(), catKode.trim(), catIkon);
+      setCatNama('');
+      setCatKode('');
+      setCatIkon('📝');
+      alert('Kategori literasi baru berhasil didaftarkan!');
+    }
+    if (onRefreshData) onRefreshData();
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategory(null);
     setCatNama('');
     setCatKode('');
     setCatIkon('📝');
-    alert('Kategori literasi baru berhasil didaftarkan!');
-    if (onRefreshData) onRefreshData();
   };
 
   const handleAddAnnouncementSubmit = (e: React.FormEvent) => {
@@ -1160,12 +1184,30 @@ export default function PanelAdmin({
               <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-emerald-800" /> Tambah Kategori Baru
+                    {editingCategory ? (
+                      <>
+                        <Pencil className="w-4 h-4 text-blue-600" /> Edit Kategori Naskah
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 text-emerald-800" /> Tambah Kategori Baru
+                      </>
+                    )}
                   </h3>
-                  <span className="text-[10px] text-slate-400">Master Data</span>
+                  {editingCategory ? (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditCategory}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" /> Batal
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">Master Data</span>
+                  )}
                 </div>
 
-                <form onSubmit={handleCreateCategorySubmit} className="space-y-4">
+                <form onSubmit={handleCategoryFormSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5">Nama Kategori</label>
                     <input 
@@ -1199,8 +1241,8 @@ export default function PanelAdmin({
                         onChange={(e) => setCatIkon(e.target.value)}
                         className="w-16 px-3 py-2 border border-slate-200 rounded-xl text-xl text-center outline-none focus:border-emerald-700"
                       />
-                      <div className="flex gap-1.5">
-                        {['📝', '📖', '🕌', '💡', '🌟', '🔬', '🌱'].map(emoji => (
+                      <div className="flex flex-wrap gap-1.5">
+                        {['📝', '📖', '📚', '✍️', '🌸', '🔬', '💡', '📰', '🧚', '🕌', '🌟', '🌱'].map(emoji => (
                           <button
                             key={emoji}
                             type="button"
@@ -1213,12 +1255,35 @@ export default function PanelAdmin({
                       </div>
                     </div>
                   </div>
-                  <button 
-                    type="submit" 
-                    className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" /> Daftarkan Kategori
-                  </button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button 
+                      type="submit" 
+                      className={`flex-1 py-3 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                        editingCategory 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : 'bg-emerald-800 hover:bg-emerald-900'
+                      }`}
+                    >
+                      {editingCategory ? (
+                        <>
+                          <CheckCircle className="w-4 h-4" /> Simpan Perubahan
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" /> Daftarkan Kategori
+                        </>
+                      )}
+                    </button>
+                    {editingCategory && (
+                      <button
+                        type="button"
+                        onClick={handleCancelEditCategory}
+                        className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                    )}
+                  </div>
                 </form>
               </div>
 
@@ -1247,7 +1312,12 @@ export default function PanelAdmin({
                     </thead>
                     <tbody className="text-xs text-slate-600 divide-y divide-slate-100">
                       {categories.map(cat => (
-                        <tr key={cat.id} className="hover:bg-slate-50/60 transition-colors">
+                        <tr 
+                          key={cat.id} 
+                          className={`hover:bg-slate-50/60 transition-colors ${
+                            editingCategory?.id === cat.id ? 'bg-blue-50/70 ring-1 ring-blue-300' : ''
+                          }`}
+                        >
                           <td className="p-4 text-xl select-none">{cat.ikon}</td>
                           <td className="p-4 font-bold text-slate-900">{cat.nama}</td>
                           <td className="p-4 font-mono text-slate-500 text-[11px]">{cat.kode}</td>
@@ -1263,19 +1333,62 @@ export default function PanelAdmin({
                             )}
                           </td>
                           <td className="p-4 text-right">
-                            <button 
-                              onClick={() => {
-                                onUpdateCategory(cat.id, { isActive: !cat.isActive });
-                                if (onRefreshData) onRefreshData();
-                              }}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
-                                cat.isActive 
-                                  ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200' 
-                                  : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
-                              }`}
-                            >
-                              {cat.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                            </button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Edit Button */}
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  setEditingCategory(cat);
+                                  setCatNama(cat.nama);
+                                  setCatKode(cat.kode);
+                                  setCatIkon(cat.ikon);
+                                }}
+                                title="Edit Nama, Kode & Ikon Kategori"
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center gap-1 ${
+                                  editingCategory?.id === cat.id
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200'
+                                }`}
+                              >
+                                <Pencil className="w-3 h-3" /> Edit
+                              </button>
+
+                              {/* Toggle Status */}
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  onUpdateCategory(cat.id, { isActive: !cat.isActive });
+                                  if (onRefreshData) onRefreshData();
+                                }}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                                  cat.isActive 
+                                    ? 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200' 
+                                    : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                                }`}
+                              >
+                                {cat.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                              </button>
+
+                              {/* Hapus Button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Apakah Anda yakin ingin menghapus kategori "${cat.nama}"?`)) {
+                                    if (onDeleteCategory) {
+                                      onDeleteCategory(cat.id);
+                                    }
+                                    if (editingCategory?.id === cat.id) {
+                                      handleCancelEditCategory();
+                                    }
+                                    if (onRefreshData) onRefreshData();
+                                  }
+                                }}
+                                title="Hapus Kategori"
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-200"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -765,6 +765,14 @@ export class LiteStore {
     return categories[index];
   }
 
+  static deleteCategory(id: string): boolean {
+    const categories = this.getCategories();
+    const filtered = categories.filter(c => c.id !== id);
+    if (filtered.length === categories.length) return false;
+    this.saveCategories(filtered);
+    return true;
+  }
+
   // Student CRUD (Admin)
   static addStudent(data: { nis: string; nama: string; tanggalLahir: string; kelasId: string }): User {
     const users = this.getUsers();

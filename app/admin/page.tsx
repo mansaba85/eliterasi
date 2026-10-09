@@ -130,6 +130,10 @@ export default function AdminPage() {
           LiteStore.updateCategory(id, updates);
           refreshData();
         }}
+        onDeleteCategory={(id) => {
+          LiteStore.deleteCategory(id);
+          refreshData();
+        }}
         onDeletePost={(id) => {
           LiteStore.deletePost(id);
           refreshData();
