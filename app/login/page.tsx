@@ -9,7 +9,7 @@ import { BookOpen, User as UserIcon, Calendar, Lock, ArrowRight, ShieldCheck, Sp
 
 export default function LoginPage() {
   const router = useRouter();
-  const { currentUser, loginSiswa, loginStaff, activePeriod } = useApp();
+  const { currentUser, loginSiswa, loginStaff, activePeriod, posts, users, periods } = useApp();
 
   const [loginRole, setLoginRole] = useState<'siswa' | 'staff'>('siswa');
   const [studentNis, setStudentNis] = useState('');
@@ -76,18 +76,18 @@ export default function LoginPage() {
             Platform literasi digital terpadu MA NU 01 Banyuputih. Bagikan tulisanmu, kumpulkan lencana prestasi, dan inspirasi sahabat madrasah.
           </p>
 
-          {/* Metrics Pills */}
+          {/* Metrics Pills (Dinamis sesuai data nyata) */}
           <div className="grid grid-cols-3 gap-3 pt-4">
             <div className="bg-white/10 border border-white/10 rounded-2xl p-4 text-left shadow-xs backdrop-blur-xs flex flex-col justify-center">
-              <p className="text-lg md:text-xl font-extrabold text-white">1.2K+</p>
+              <p className="text-lg md:text-xl font-extrabold text-white">{posts.length}</p>
               <p className="text-[9px] text-blue-200 font-bold mt-0.5 leading-none">Tulisan</p>
             </div>
             <div className="bg-white/10 border border-white/10 rounded-2xl p-4 text-left shadow-xs backdrop-blur-xs flex flex-col justify-center">
-              <p className="text-lg md:text-xl font-extrabold text-white">380+</p>
+              <p className="text-lg md:text-xl font-extrabold text-white">{users.filter(u => u.role === 'siswa').length}</p>
               <p className="text-[9px] text-blue-200 font-bold mt-0.5 leading-none">Siswa Aktif</p>
             </div>
             <div className="bg-white/10 border border-white/10 rounded-2xl p-4 text-left shadow-xs backdrop-blur-xs flex flex-col justify-center">
-              <p className="text-lg md:text-xl font-extrabold text-white">10</p>
+              <p className="text-lg md:text-xl font-extrabold text-white">{periods.length}</p>
               <p className="text-[9px] text-blue-200 font-bold mt-0.5 leading-none">Agenda Selesai</p>
             </div>
           </div>
