@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
-    const folderType = (formData.get('type') as string) || 'covers'; // 'covers' | 'avatars' | 'general'
+    const rawFolderType = (formData.get('type') as string) || 'covers';
+    const allowedFolders = ['covers', 'avatars', 'general'];
+    const folderType = allowedFolders.includes(rawFolderType) ? rawFolderType : 'covers';
 
     if (!file) {
       return NextResponse.json({ error: 'Tidak ada berkas yang diunggah' }, { status: 400 });
