@@ -61,6 +61,7 @@ export default function ModalDetailPost({
   const [mounted, setMounted] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const commentInputRef = React.useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -205,8 +206,6 @@ export default function ModalDetailPost({
       setTimeout(() => setShared(false), 2000);
     }
   };
-
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
