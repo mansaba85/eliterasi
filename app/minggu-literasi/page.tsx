@@ -69,7 +69,6 @@ export default function MingguLiterasiPage() {
             if (tab === 'beranda') router.push('/');
             if (tab === 'tulis') router.push('/tulis');
             if (tab === 'bookmark') router.push('/bookmark');
-            if (tab === 'tantangan') router.push('/tantangan');
           }}
           onPostCreated={createPost}
           onPostUpdated={updatePost}

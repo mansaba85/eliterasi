@@ -65,7 +65,6 @@ export default function BookmarkPage() {
             if (tab === 'beranda') router.push('/');
             if (tab === 'tulis') router.push('/tulis');
             if (tab === 'mingguresumen') router.push('/minggu-literasi');
-            if (tab === 'tantangan') router.push('/tantangan');
           }}
           onPostCreated={createPost}
           onPostUpdated={updatePost}

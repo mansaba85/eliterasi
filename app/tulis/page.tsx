@@ -81,7 +81,6 @@ export default function TulisPage() {
           onNavigateTab={(tab) => {
             if (tab === 'beranda') router.push('/');
             if (tab === 'bookmark') router.push('/bookmark');
-            if (tab === 'tantangan') router.push('/tantangan');
             if (tab === 'mingguresumen') router.push('/minggu-literasi');
           }}
           onPostCreated={(data) => {

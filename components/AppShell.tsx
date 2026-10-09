@@ -128,19 +128,6 @@ export default function AppShell({ children }: AppShellProps) {
               <span>Bookmark & Buku</span>
             </Link>
 
-            {/* Tantangan */}
-            <Link
-              href="/tantangan"
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                isActive('/tantangan')
-                  ? 'bg-white/12 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:text-white hover:bg-white/6'
-              }`}
-            >
-              <Trophy className="w-4 h-4 opacity-80" />
-              <span>Tantangan</span>
-            </Link>
-
             {/* Pencarian Global */}
             <Link
               href="/cari"
@@ -291,7 +278,6 @@ export default function AppShell({ children }: AppShellProps) {
                   ...(!isAdmin ? [{ href: '/tulis', label: 'Tulis Karya', icon: PenTool, highlight: true }] : []),
                   { href: '/minggu-literasi', label: 'Agenda Literasi', icon: Calendar },
                   { href: '/bookmark', label: 'Bookmark & Buku', icon: Bookmark },
-                  ...(!isAdmin ? [{ href: '/tantangan', label: 'Tantangan', icon: Trophy }] : []),
                   { href: '/cari', label: 'Cari Naskah', icon: Search },
                   ...(currentUser ? [{ href: '/profil/saya', label: 'Profil Saya', icon: UserIcon }] : []),
                   ...(isGuru ? [{ href: '/guru', label: 'Panel Guru', icon: Settings }] : []),
