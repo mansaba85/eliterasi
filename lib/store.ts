@@ -587,9 +587,13 @@ export class LiteStore {
     if (typeof window === 'undefined') return defaultValue;
     try {
       const item = localStorage.getItem(`eliterasi_${key}`);
-      return item ? JSON.parse(item) : defaultValue;
+      if (!item || item === 'undefined' || item === 'null') return defaultValue;
+      return JSON.parse(item);
     } catch (e) {
-      console.error(e);
+      console.warn(`[LiteStore] Corrupted JSON detected in eliterasi_${key}, healing back to default:`, e);
+      try {
+        localStorage.removeItem(`eliterasi_${key}`);
+      } catch (_) {}
       return defaultValue;
     }
   }
