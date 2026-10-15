@@ -660,13 +660,23 @@ export class LiteStore {
 
     // Tarik kembali poin dari dompet akun penulis (siswa)
     const users = this.getUsers();
-    const authorIndex = users.findIndex(u => u.id === targetPost.authorId);
+    const authorIndex = users.findIndex(u => 
+      u.id === targetPost.authorId || 
+      String(u.id) === String(targetPost.authorId) ||
+      Boolean(u.nis && targetPost.authorId && String(u.nis) === String(targetPost.authorId)) ||
+      Boolean(u.nama && targetPost.authorNama && u.nama.trim().toLowerCase() === targetPost.authorNama.trim().toLowerCase())
+    );
+
     if (authorIndex !== -1 && totalDeduction > 0) {
       users[authorIndex].poin = Math.max(0, (users[authorIndex].poin || 0) - totalDeduction);
       this.saveUsers(users);
 
       const currentUser = this.getCurrentUser();
-      if (currentUser && currentUser.id === targetPost.authorId) {
+      if (currentUser && (
+        currentUser.id === users[authorIndex].id || 
+        String(currentUser.id) === String(users[authorIndex].id) ||
+        Boolean(currentUser.nis && users[authorIndex].nis && currentUser.nis === users[authorIndex].nis)
+      )) {
         currentUser.poin = users[authorIndex].poin;
         this.saveCurrentUser(currentUser);
       }
