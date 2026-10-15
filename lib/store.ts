@@ -694,6 +694,91 @@ export class LiteStore {
     return { success: true, deductedPoints: totalDeduction, authorNama: targetPost.authorNama };
   }
 
+  // Menghitung poin siswa murni dari seluruh aktivitas valid yang saat ini masih aktif
+  static calculateStudentActivePoints(studentId: string): number {
+    const users = this.getUsers();
+    const student = users.find(u => u.id === studentId || String(u.id) === String(studentId));
+    if (!student) return 0;
+
+    const posts = this.getPosts();
+    let total = 0;
+
+    // 1. Poin dari Naskah / Postingan Aktif
+    posts.forEach(p => {
+      const isAuthor = 
+        p.authorId === student.id || 
+        String(p.authorId) === String(student.id) ||
+        Boolean(student.nis && p.authorId && String(student.nis) === String(p.authorId)) ||
+        Boolean(student.nama && p.authorNama && student.nama.trim().toLowerCase() === p.authorNama.trim().toLowerCase());
+
+      if (isAuthor && p.status === 'published') {
+        // Poin terbit
+        total += p.isMingguLiterasi ? 30 : 15;
+
+        // Bonus kurasi nilai guru
+        if (p.grade && p.grade.skor) {
+          total += Math.round(p.grade.skor / 2);
+        }
+
+        // Like yang didapat karyanya
+        if (Array.isArray(p.likes)) {
+          total += p.likes.length * 2;
+        }
+
+        // Reaksi apresiasi yang didapat
+        if (Array.isArray(p.reactions)) {
+          total += p.reactions.length * 1;
+        }
+
+        // Komentar yang masuk di karyanya
+        if (Array.isArray(p.comments)) {
+          total += p.comments.length * 1;
+        }
+      }
+    });
+
+    // 2. Poin dari Buku Bacaan Selesai (+15 per buku yang selesai)
+    const readingBooks = this.getReadingBooks();
+    readingBooks.forEach(b => {
+      if ((b.userId === student.id || String(b.userId) === String(student.id)) && b.statusBaca === 'sudah') {
+        total += 15;
+      }
+    });
+
+    // 3. Poin dari Tantangan Literasi yang terselesaikan
+    const challenges = this.getChallenges();
+    challenges.forEach(ch => {
+      if (Array.isArray(ch.selesaikanPeserta) && ch.selesaikanPeserta.includes(student.id)) {
+        total += ch.poinBonus || 50;
+      }
+    });
+
+    return total;
+  }
+
+  // Rekalkulasi massal seluruh akun siswa agar poin sinkron dengan karya aktif
+  static recalculateAllStudentPoints(): { updatedCount: number } {
+    const users = this.getUsers();
+    let updatedCount = 0;
+
+    users.forEach(u => {
+      if (u.role === 'siswa') {
+        const activePoints = this.calculateStudentActivePoints(u.id);
+        if (u.poin !== activePoints) {
+          u.poin = activePoints;
+          updatedCount++;
+        }
+      }
+    });
+
+    if (updatedCount > 0) {
+      this.saveUsers(users);
+      this.addAuditLog('LAINNYA', `Menyelaraskan ulang poin untuk ${updatedCount} siswa berdasarkan data naskah & aktivitas aktif.`);
+    }
+
+    return { updatedCount };
+  }
+
   static likePost(postId: string, userId: string): Post | null {
     const posts = this.getPosts();
     const index = posts.findIndex(p => p.id === postId);

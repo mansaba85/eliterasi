@@ -8,7 +8,7 @@ import { toast, confirmDialog } from '../../lib/toast';
 import { 
   Users, Plus, Upload, Trash2, Edit3, Key, Search, 
   X, Download, FileSpreadsheet, CheckCircle2, AlertCircle,
-  Filter, GraduationCap, CheckCircle
+  Filter, GraduationCap, CheckCircle, RotateCcw, Sparkles
 } from 'lucide-react';
 
 interface TabDataSiswaProps {
@@ -42,6 +42,7 @@ export default function TabDataSiswa({
   const [editNis, setEditNis] = useState('');
   const [editTanggalLahir, setEditTanggalLahir] = useState('');
   const [editKelasId, setEditKelasId] = useState('');
+  const [editPoin, setEditPoin] = useState<number>(0);
 
   // Form Reset PIN Modal
   const [resetModalStudent, setResetModalStudent] = useState<User | null>(null);
@@ -110,6 +111,7 @@ export default function TabDataSiswa({
     setEditNis(student.nis || '');
     setEditTanggalLahir(student.tanggalLahir || '');
     setEditKelasId(student.kelasId || classes[0]?.id || '');
+    setEditPoin(student.poin || 0);
   };
 
   // Submit Edit Siswa
@@ -121,12 +123,28 @@ export default function TabDataSiswa({
       nama: editNama.trim(),
       nis: editNis.trim(),
       tanggalLahir: editTanggalLahir.trim(),
-      kelasId: editKelasId
+      kelasId: editKelasId,
+      poin: Math.max(0, Number(editPoin) || 0)
     });
 
     setEditingStudent(null);
-    toast.success(`Data siswa ${editNama} berhasil diperbarui!`);
+    toast.success(`Data siswa ${editNama} & saldo poin berhasil diperbarui!`);
     if (onUserUpdated) onUserUpdated();
+  };
+
+  // Rekalkulasi Massal Poin Seluruh Siswa dari Naskah Aktif
+  const handleRecalculateAllPoints = async () => {
+    const ok = await confirmDialog({
+      title: 'Sinkronkan & Hitung Ulang Poin Semua Siswa',
+      message: 'Sistem akan memeriksa seluruh naskah yang saat ini aktif di database dan menyesuaikan total poin setiap siswa. Seluruh sisa poin dari karya yang pernah dihapus sebelumnya akan otomatis dibersihkan. Lanjutkan?',
+      confirmText: 'Ya, Sinkronkan Poin',
+      isDestructive: false
+    });
+    if (ok) {
+      const res = LiteStore.recalculateAllStudentPoints();
+      toast.success(`Berhasil menyelaraskan poin siswa! Sebanyak ${res.updatedCount} akun siswa berhasil disesuaikan.`);
+      if (onUserUpdated) onUserUpdated();
+    }
   };
 
   // Open Reset PIN
@@ -280,8 +298,17 @@ export default function TabDataSiswa({
           </div>
         </div>
 
-        {/* Action Buttons: Modal Input & Excel Import */}
+        {/* Action Buttons: Modal Input, Excel Import & Point Sync */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleRecalculateAllPoints}
+            className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+            title="Hitung ulang poin semua siswa berdasarkan naskah karya yang aktif dan bersihkan poin dari karya yang pernah dihapus"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+            <span>Sinkronkan Poin Siswa</span>
+          </button>
+
           <button
             onClick={() => setShowImportModal(true)}
             className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-2"
@@ -601,6 +628,34 @@ export default function TabDataSiswa({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Saldo Poin Bintang Literasi</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!editingStudent) return;
+                      const calculated = LiteStore.calculateStudentActivePoints(editingStudent.id);
+                      setEditPoin(calculated);
+                      toast.info(`Poin dari naskah aktif siswa ini: ${calculated} poin.`);
+                    }}
+                    className="text-[11px] text-blue-700 hover:text-blue-900 font-bold underline cursor-pointer"
+                  >
+                    Hitung dari Naskah Aktif
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  value={editPoin}
+                  onChange={(e) => setEditPoin(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-amber-900 bg-amber-50/50 outline-none focus:border-[#132257]"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Koreksi poin siswa secara manual atau klik "Hitung dari Naskah Aktif" untuk membersihkan sisa poin karya yang sudah dihapus.
+                </p>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2.5">
