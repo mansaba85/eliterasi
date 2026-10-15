@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { LibraryBook } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   BookOpen, Plus, Search, Edit3, Trash2, CheckCircle, ExternalLink, 
   FileText, Bookmark, Star, Filter, Eye, X
@@ -80,7 +81,7 @@ export default function TabPerpustakaan({ onLibraryUpdated }: TabPerpustakaanPro
         isWajib,
         jumlahHalaman: Number(halaman)
       });
-      alert(`Buku "${judul}" berhasil diperbarui!`);
+      toast.success(`Buku "${judul}" berhasil diperbarui!`);
     } else {
       LiteStore.addLibraryBook({
         judul: judul.trim(),
@@ -94,16 +95,24 @@ export default function TabPerpustakaan({ onLibraryUpdated }: TabPerpustakaanPro
         isWajib,
         jumlahHalaman: Number(halaman)
       });
-      alert(`Buku baru "${judul}" berhasil ditambahkan ke katalog perpustakaan!`);
+      toast.success(`Buku baru "${judul}" berhasil ditambahkan ke katalog perpustakaan!`);
     }
 
     resetForm();
     if (onLibraryUpdated) onLibraryUpdated();
   };
 
-  const handleDelete = (id: string, judulBuku: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus buku "${judulBuku}" dari katalog?`)) {
+  const handleDelete = async (id: string, judulBuku: string) => {
+    const ok = await confirmDialog({
+      title: 'Hapus Buku Perpustakaan',
+      message: `Apakah Anda yakin ingin menghapus buku "${judulBuku}" dari katalog perpustakaan digital?`,
+      confirmText: 'Ya, Hapus Buku',
+      isDestructive: true
+    });
+
+    if (ok) {
       LiteStore.deleteLibraryBook(id);
+      toast.success(`Buku "${judulBuku}" berhasil dihapus dari katalog`);
       if (onLibraryUpdated) onLibraryUpdated();
     }
   };

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Post, Category } from '../lib/types';
 import { Heart, MessageSquare, Clock, ArrowRight, Star, Award, Bookmark, Share2, Send } from 'lucide-react';
+import { toast } from '../lib/toast';
 
 interface CardPostProps {
   post: Post;
@@ -85,7 +86,7 @@ export default function CardPost({ post, categories, currentUserId, onOpenDetail
     if (typeof window !== 'undefined') {
       const url = `${window.location.origin}/tulisan/${post.id}`;
       navigator.clipboard.writeText(url);
-      alert('Tautan karya berhasil disalin!');
+      toast.success('Tautan karya berhasil disalin ke clipboard!');
     }
   };
 

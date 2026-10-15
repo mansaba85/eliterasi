@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { Class, User } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   GraduationCap, Plus, Upload, Trash2, Edit3, Search, 
   X, Download, FileSpreadsheet, CheckCircle2, AlertCircle,
@@ -88,7 +89,7 @@ export default function TabDataKelas({
     setNamaKelas('');
     setWaliKelasId('');
     setShowAddModal(false);
-    alert(`Rombongan belajar ${namaKelas} berhasil ditambahkan!`);
+    toast.success(`Rombongan belajar ${namaKelas} berhasil ditambahkan!`);
     if (onClassesUpdated) onClassesUpdated();
   };
 
@@ -117,19 +118,27 @@ export default function TabDataKelas({
     });
 
     setEditingClass(null);
-    alert(`Data kelas ${editNamaKelas} berhasil diperbarui!`);
+    toast.success(`Data kelas ${editNamaKelas} berhasil diperbarui!`);
     if (onClassesUpdated) onClassesUpdated();
   };
 
   // Hapus Kelas
-  const handleDelete = (cls: Class) => {
+  const handleDelete = async (cls: Class) => {
     const count = getStudentCount(cls.id);
     const confirmMsg = count > 0
-      ? `Kelas "${cls.namaKelas}" memiliki ${count} siswa terdaftar. Hapus kelas ini?`
+      ? `Kelas "${cls.namaKelas}" memiliki ${count} siswa terdaftar. Hapus kelas ini? Siswa yang ada di kelas ini tidak akan terhapus, tetapi data kelasnya akan dikosongkan.`
       : `Yakin ingin menghapus kelas "${cls.namaKelas}"?`;
 
-    if (confirm(confirmMsg)) {
+    const ok = await confirmDialog({
+      title: 'Hapus Rombongan Belajar',
+      message: confirmMsg,
+      confirmText: 'Ya, Hapus Kelas',
+      isDestructive: true
+    });
+
+    if (ok) {
       LiteStore.deleteClass(cls.id);
+      toast.success(`Kelas "${cls.namaKelas}" berhasil dihapus`);
       if (onClassesUpdated) onClassesUpdated();
     }
   };
@@ -246,7 +255,7 @@ export default function TabDataKelas({
     setShowImportModal(false);
     setParsedExcelData([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    alert(`Import Berhasil! ${addedCount} rombongan belajar baru berhasil ditambahkan.`);
+    toast.success(`Import Berhasil! ${addedCount} rombongan belajar baru berhasil ditambahkan.`);
     if (onClassesUpdated) onClassesUpdated();
   };
 

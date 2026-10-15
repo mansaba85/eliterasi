@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { User, CertificateRecord } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   Award, Plus, Printer, Trash2, Search, CheckCircle, Eye, 
   Sparkles, Calendar, UserCheck, ShieldCheck, X, Download
@@ -50,16 +51,24 @@ export default function TabSertifikat({ users, onCertificateCreated }: TabSertif
       kepalaMadrasahNip: schoolSettings.kepalaMadrasahNip
     });
 
-    alert(`Piagam Penghargaan untuk ${targetStudent.nama} berhasil diterbitkan dan +100 bonus poin bintang ditambahkan!`);
+    toast.success(`Piagam Penghargaan untuk ${targetStudent.nama} berhasil diterbitkan dan +100 bonus poin bintang ditambahkan!`);
     const nextSeq = String(certificates.length + 50).padStart(3, '0');
     setNomorSertifikat(`${nextSeq}/MA.NU.01/LIT/2026`);
     setPreviewCert(newCert);
     if (onCertificateCreated) onCertificateCreated();
   };
 
-  const handleDelete = (id: string, nama: string) => {
-    if (confirm(`Hapus data sertifikat untuk ${nama}?`)) {
+  const handleDelete = async (id: string, nama: string) => {
+    const ok = await confirmDialog({
+      title: 'Hapus Sertifikat Penghargaan',
+      message: `Hapus data sertifikat penghargaan untuk siswa "${nama}"?`,
+      confirmText: 'Ya, Hapus',
+      isDestructive: true
+    });
+
+    if (ok) {
       LiteStore.deleteCertificate(id);
+      toast.success(`Sertifikat untuk ${nama} berhasil dihapus`);
       if (onCertificateCreated) onCertificateCreated();
     }
   };

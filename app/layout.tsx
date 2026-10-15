@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css'; // Global styles
 import { AppProvider } from '../lib/AppContext';
+import ToastContainer from '../components/ToastContainer';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -72,6 +73,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         />
         <AppProvider>
           {children}
+          <ToastContainer />
         </AppProvider>
       </body>
     </html>

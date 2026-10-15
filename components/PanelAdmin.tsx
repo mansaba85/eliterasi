@@ -11,6 +11,7 @@ import TabRekapLaporan from './admin/TabRekapLaporan';
 import TabPengaturanSekolah from './admin/TabPengaturanSekolah';
 import TabSertifikat from './admin/TabSertifikat';
 import TabAuditLog from './admin/TabAuditLog';
+import { toast, confirmDialog } from '../lib/toast';
 import { 
   Users, Calendar, FolderOpen, Bell, Flag, Plus, 
   Eye, EyeOff, Trash2, FileText, Settings, Award, 
@@ -180,7 +181,7 @@ export default function PanelAdmin({
     setPeriodKategoriId('bebas');
     setPeriodTema('');
     setPeriodIzinkanBebas(true);
-    alert('Agenda Hari Literasi baru berhasil dijadwalkan!');
+    toast.success('Agenda Hari Literasi baru berhasil dijadwalkan!');
     if (onRefreshData) onRefreshData();
   };
 
@@ -192,7 +193,7 @@ export default function PanelAdmin({
     setCatNama('');
     setCatKode('');
     setCatIkon('📝');
-    alert('Kategori literasi baru berhasil didaftarkan!');
+    toast.success('Kategori literasi baru berhasil didaftarkan!');
     if (onRefreshData) onRefreshData();
   };
 
@@ -213,7 +214,7 @@ export default function PanelAdmin({
       ikon: editModalIkon
     });
     setEditingCategoryModal(null);
-    alert('Kategori literasi berhasil diperbarui!');
+    toast.success('Kategori literasi berhasil diperbarui!');
     if (onRefreshData) onRefreshData();
   };
 
@@ -224,7 +225,7 @@ export default function PanelAdmin({
     onAddAnnouncement(annJudul.trim(), annIsi.trim());
     setAnnJudul('');
     setAnnIsi('');
-    alert('Pengumuman baru disebarkan ke beranda siswa!');
+    toast.success('Pengumuman baru disebarkan ke beranda siswa!');
     if (onRefreshData) onRefreshData();
   };
 
@@ -1101,7 +1102,7 @@ export default function PanelAdmin({
                                 <button 
                                   onClick={() => {
                                     onUpdatePost(post.id, { status: 'draft' });
-                                    alert(`Karya "${post.judul}" berhasil disembunyikan dari beranda.`);
+                                    toast.info(`Karya "${post.judul}" berhasil disembunyikan.`);
                                   }}
                                   className="text-xs text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1 cursor-pointer bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200"
                                 >
@@ -1111,7 +1112,7 @@ export default function PanelAdmin({
                                 <button 
                                   onClick={() => {
                                     onUpdatePost(post.id, { status: 'published', visibilitas: 'publik' });
-                                    alert(`Karya "${post.judul}" berhasil ditampilkan ke publik!`);
+                                    toast.success(`Karya "${post.judul}" berhasil ditampilkan ke publik!`);
                                   }}
                                   className="text-xs text-emerald-800 hover:text-emerald-950 font-bold flex items-center gap-1 cursor-pointer bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"
                                 >
@@ -1120,9 +1121,16 @@ export default function PanelAdmin({
                               )}
 
                               <button 
-                                onClick={() => {
-                                  if (confirm(`Hapus permanen karya "${post.judul}" karya ${post.authorNama}?`)) {
+                                onClick={async () => {
+                                  const ok = await confirmDialog({
+                                    title: 'Hapus Karya Siswa',
+                                    message: `Hapus permanen karya "${post.judul}" oleh ${post.authorNama}? Tindakan ini tidak dapat dibatalkan.`,
+                                    confirmText: 'Ya, Hapus Permanen',
+                                    isDestructive: true
+                                  });
+                                  if (ok) {
                                     onDeletePost(post.id);
+                                    toast.success('Karya berhasil dihapus');
                                   }
                                 }}
                                 className="text-xs text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1 cursor-pointer hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors"
@@ -1325,14 +1333,21 @@ export default function PanelAdmin({
                               {/* Hapus Button */}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (confirm(`Apakah Anda yakin ingin menghapus kategori "${cat.nama}"?`)) {
+                                onClick={async () => {
+                                  const ok = await confirmDialog({
+                                    title: 'Hapus Kategori Naskah',
+                                    message: `Apakah Anda yakin ingin menghapus kategori "${cat.nama}"?`,
+                                    confirmText: 'Ya, Hapus Kategori',
+                                    isDestructive: true
+                                  });
+                                  if (ok) {
                                     if (onDeleteCategory) {
                                       onDeleteCategory(cat.id);
                                     }
                                     if (editingCategoryModal?.id === cat.id) {
                                       setEditingCategoryModal(null);
                                     }
+                                    toast.success(`Kategori "${cat.nama}" berhasil dihapus`);
                                     if (onRefreshData) onRefreshData();
                                   }
                                 }}

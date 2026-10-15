@@ -9,6 +9,7 @@ import {
   Heart, MessageSquare, ArrowLeft, Search, Filter, Users
 } from 'lucide-react';
 import ModalDetailPost from './ModalDetailPost';
+import { toast, confirmDialog } from '../lib/toast';
 
 interface DashboardSiswaProps {
   currentUser: User;
@@ -93,11 +94,11 @@ export default function DashboardSiswa({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (!file.type.startsWith('image/')) {
-        alert('File yang diunggah harus berupa gambar!');
+        toast.error('File yang diunggah harus berupa gambar!');
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        alert('Ukuran gambar terlalu besar! Maksimal 2MB.');
+        toast.error('Ukuran gambar terlalu besar! Maksimal 2MB.');
         return;
       }
       const reader = new FileReader();
@@ -112,11 +113,11 @@ export default function DashboardSiswa({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith('image/')) {
-        alert('File yang diunggah harus berupa gambar!');
+        toast.error('File yang diunggah harus berupa gambar!');
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        alert('Ukuran gambar terlalu besar! Maksimal 2MB.');
+        toast.error('Ukuran gambar terlalu besar! Maksimal 2MB.');
         return;
       }
       const reader = new FileReader();
@@ -216,7 +217,7 @@ export default function DashboardSiswa({
 
   const handlePublishPost = (status: 'published' | 'draft') => {
     if (!judul.trim() || !isi.trim()) {
-      alert('Judul dan isi tulisan tidak boleh kosong!');
+      toast.warning('Judul dan isi tulisan tidak boleh kosong!');
       return;
     }
 
@@ -238,10 +239,10 @@ export default function DashboardSiswa({
 
     if (isEditMode) {
       onPostUpdated(isEditMode, postData);
-      alert(`Karya berhasil ${status === 'published' ? 'diperbarui dan dipublikasikan!' : 'disimpan sebagai draft!'}`);
+      toast.success(status === 'published' ? 'Karya berhasil diperbarui dan dipublikasikan!' : 'Perubahan disimpan sebagai draft!');
     } else {
       onPostCreated(postData);
-      alert(`Karya baru berhasil ${status === 'published' ? 'dipublikasikan! Kamu mendapat poin reward.' : 'disimpan sebagai draft!'}`);
+      toast.success(status === 'published' ? 'Karya baru berhasil dipublikasikan! Kamu mendapat poin reward.' : 'Karya berhasil disimpan sebagai draft!');
     }
 
     // Hapus draft temp
@@ -251,7 +252,7 @@ export default function DashboardSiswa({
 
   const handleAskAI = async () => {
     if (!isi.trim() || isi.trim().length < 10) {
-      alert('Tuliskan beberapa kalimat terlebih dahulu sebelum bertanya pada AI.');
+      toast.info('Tuliskan beberapa kalimat terlebih dahulu sebelum bertanya pada AI.');
       return;
     }
 
@@ -312,7 +313,7 @@ export default function DashboardSiswa({
     setStatusBaca('rencana');
     setSinopsis('');
     setShowAddBook(false);
-    alert('Buku berhasil ditambahkan ke Reading List! Kamu mendapatkan bonus 5 poin.');
+    toast.success('Buku berhasil ditambahkan ke Reading List! Kamu mendapatkan bonus 5 poin.');
   };
 
   // Filter-filter data untuk tab-tab siswa
@@ -1073,7 +1074,7 @@ export default function DashboardSiswa({
                           <button 
                             onClick={() => {
                               onUpdateBookStatus(book.id, 'sudah');
-                              alert('Buku ditandai selesai dibaca! Selamat, kamu mendapat reward 15 poin tambahan.');
+                              toast.success('Buku ditandai selesai dibaca! Selamat, kamu mendapat reward 15 poin tambahan.');
                             }}
                             className="text-[10px] text-emerald-800 hover:text-emerald-950 font-bold flex items-center gap-0.5 hover:underline"
                           >

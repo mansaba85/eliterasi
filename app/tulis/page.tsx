@@ -7,6 +7,7 @@ import { useApp } from '@/lib/AppContext';
 import AppShell from '@/components/AppShell';
 import DashboardSiswa from '@/components/DashboardSiswa';
 import { PenTool, LogIn } from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 export default function TulisPage() {
   const router = useRouter();
@@ -85,12 +86,12 @@ export default function TulisPage() {
           }}
           onPostCreated={(data) => {
             createPost(data);
-            alert('Karya tulisan Anda berhasil dipublikasikan ke beranda!');
+            toast.success('Karya tulisan Anda berhasil dipublikasikan ke beranda!');
             router.push('/');
           }}
           onPostUpdated={(id, updates) => {
             updatePost(id, updates);
-            alert('Perubahan karya berhasil disimpan!');
+            toast.success('Perubahan karya berhasil disimpan!');
             router.push('/');
           }}
           onPostDeleted={deletePost}

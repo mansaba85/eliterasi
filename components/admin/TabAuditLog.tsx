@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { AuditLog } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   ShieldAlert, Search, Trash2, Download, Filter, Clock, 
   User, CheckCircle, AlertTriangle, FileCode
@@ -21,10 +22,17 @@ export default function TabAuditLog({ onLogCleared }: TabAuditLogProps) {
     setLogs(LiteStore.getAuditLogs());
   };
 
-  const handleClearLogs = () => {
-    if (confirm('Apakah Anda yakin ingin mengosongkan seluruh riwayat log aktivitas sistem?')) {
+  const handleClearLogs = async () => {
+    const ok = await confirmDialog({
+      title: 'Kosongkan Riwayat Log',
+      message: 'Apakah Anda yakin ingin mengosongkan seluruh riwayat log aktivitas sistem? Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Ya, Kosongkan',
+      isDestructive: true
+    });
+    if (ok) {
       LiteStore.clearAuditLogs();
       refreshLogs();
+      toast.success('Seluruh riwayat log audit berhasil dikosongkan');
       if (onLogCleared) onLogCleared();
     }
   };

@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { User, Class } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   Users, Plus, Upload, Trash2, Edit3, Key, Search, 
   X, Download, FileSpreadsheet, CheckCircle2, AlertCircle,
@@ -83,7 +84,7 @@ export default function TabDataSiswa({
     // Cek apakah NIS sudah terdaftar
     const existingNis = users.find(u => u.nis === nis.trim());
     if (existingNis) {
-      alert(`NIS "${nis}" sudah digunakan oleh siswa ${existingNis.nama}! Silakan gunakan NIS lain.`);
+      toast.error(`NIS "${nis}" sudah digunakan oleh siswa ${existingNis.nama}! Silakan gunakan NIS lain.`);
       return;
     }
 
@@ -98,7 +99,7 @@ export default function TabDataSiswa({
     setNama('');
     setTanggalLahir('');
     setShowAddModal(false);
-    alert(`Siswa ${nama} berhasil didaftarkan ke sistem!`);
+    toast.success(`Siswa ${nama} berhasil didaftarkan ke sistem!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -124,7 +125,7 @@ export default function TabDataSiswa({
     });
 
     setEditingStudent(null);
-    alert(`Data siswa ${editNama} berhasil diperbarui!`);
+    toast.success(`Data siswa ${editNama} berhasil diperbarui!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -255,7 +256,7 @@ export default function TabDataSiswa({
     setShowImportModal(false);
     setParsedExcelData([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    alert(`Import Berhasil! ${addedCount} data siswa baru berhasil ditambahkan.`);
+    toast.success(`Import Berhasil! ${addedCount} data siswa baru berhasil ditambahkan.`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -395,9 +396,16 @@ export default function TabDataSiswa({
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm(`Yakin ingin menghapus akun siswa ${student.nama} (NIS: ${student.nis})?`)) {
+                          onClick={async () => {
+                            const ok = await confirmDialog({
+                              title: 'Hapus Akun Siswa',
+                              message: `Yakin ingin menghapus akun siswa ${student.nama} (NIS: ${student.nis})? Seluruh data karya dan progres siswa ini akan ikut terhapus.`,
+                              confirmText: 'Ya, Hapus Siswa',
+                              isDestructive: true
+                            });
+                            if (ok) {
                               onDeleteUser(student.id);
+                              toast.success(`Akun siswa ${student.nama} berhasil dihapus`);
                             }
                           }}
                           className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"

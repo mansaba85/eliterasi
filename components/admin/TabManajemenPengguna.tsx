@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { User, Class, UserRole } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   Users, Plus, Upload, Trash2, Edit3, Key, Search, CheckCircle, ShieldCheck, 
   GraduationCap, BookOpen, UserCheck, X, Download, FileSpreadsheet, AlertCircle,
@@ -88,7 +89,7 @@ export default function TabManajemenPengguna({
     setNama('');
     setTanggalLahir('');
     setShowAddModal(false);
-    alert(`Siswa ${nama} berhasil didaftarkan ke sistem!`);
+    toast.success(`Siswa ${nama} berhasil didaftarkan ke sistem!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -99,7 +100,7 @@ export default function TabManajemenPengguna({
 
     const allUsers = LiteStore.getUsers();
     if (allUsers.some(u => u.username?.toLowerCase() === staffUsername.trim().toLowerCase())) {
-      alert(`Username "${staffUsername}" sudah digunakan! Silakan gunakan username lain.`);
+      toast.error(`Username "${staffUsername}" sudah digunakan! Silakan gunakan username lain.`);
       return;
     }
 
@@ -119,7 +120,7 @@ export default function TabManajemenPengguna({
     setStaffNama('');
     setStaffBio('');
     setShowAddModal(false);
-    alert(`Akun staff ${newStaff.nama} berhasil didaftarkan!`);
+    toast.success(`Akun staff ${newStaff.nama} berhasil didaftarkan!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -157,7 +158,7 @@ export default function TabManajemenPengguna({
 
     LiteStore.updateUserAccount(editingUser.id, updates);
     setEditingUser(null);
-    alert(`Data akun ${editNama} berhasil diperbarui!`);
+    toast.success(`Data akun ${editNama} berhasil diperbarui!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -239,7 +240,7 @@ export default function TabManajemenPengguna({
       onAddStudent(item);
     });
 
-    alert(`Berhasil mengimpor ${parsedCsvData.length} siswa baru ke sistem!`);
+    toast.success(`Berhasil mengimpor ${parsedCsvData.length} siswa baru ke sistem!`);
     setParsedCsvData([]);
     setShowImportModal(false);
     if (onUserUpdated) onUserUpdated();
@@ -512,9 +513,16 @@ export default function TabManajemenPengguna({
                           </button>
 
                           <button
-                            onClick={() => {
-                              if (confirm(`Yakin ingin menghapus akun "${user.nama}" secara permanen?`)) {
+                            onClick={async () => {
+                              const ok = await confirmDialog({
+                                title: 'Hapus Akun Pengguna',
+                                message: `Yakin ingin menghapus akun "${user.nama}" secara permanen? Tindakan ini tidak dapat dibatalkan.`,
+                                confirmText: 'Ya, Hapus Akun',
+                                isDestructive: true
+                              });
+                              if (ok) {
                                 onDeleteUser(user.id);
+                                toast.success(`Akun "${user.nama}" berhasil dihapus`);
                               }
                             }}
                             className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"

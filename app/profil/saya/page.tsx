@@ -11,6 +11,7 @@ import ModalDetailPost from '@/components/ModalDetailPost';
 import ModalLogoutConfirm from '@/components/ModalLogoutConfirm';
 import { LiteStore, ACHIEVEMENTS } from '@/lib/store';
 import { Post, Comment } from '@/lib/types';
+import { toast, confirmDialog } from '@/lib/toast';
 import { 
   User as UserIcon, BookOpen, Star, Calendar, Bookmark, 
   Award, ShieldAlert, LogIn, Heart, MessageSquare, Plus, PenTool, Camera, Trash2, LogOut
@@ -85,11 +86,11 @@ export default function ProfilSayaPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (!file.type.startsWith('image/')) {
-        alert('File yang diunggah harus berupa gambar!');
+        toast.error('File yang diunggah harus berupa gambar!');
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        alert('Ukuran foto terlalu besar! Maksimal 2MB.');
+        toast.error('Ukuran foto terlalu besar! Maksimal 2MB.');
         return;
       }
       const reader = new FileReader();
@@ -97,15 +98,23 @@ export default function ProfilSayaPage() {
         const result = reader.result as string;
         LiteStore.updateUserPhoto(currentUser.id, result);
         refreshData();
+        toast.success('Foto profil berhasil diperbarui!');
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveAvatar = () => {
-    if (confirm('Hapus foto profil dan gunakan avatar inisial?')) {
+  const handleRemoveAvatar = async () => {
+    const ok = await confirmDialog({
+      title: 'Hapus Foto Profil',
+      message: 'Hapus foto profil dan gunakan avatar inisial nama Anda?',
+      confirmText: 'Ya, Hapus Foto',
+      isDestructive: true
+    });
+    if (ok) {
       LiteStore.updateUserPhoto(currentUser.id, '');
       refreshData();
+      toast.success('Foto profil berhasil dihapus');
     }
   };
 
@@ -119,6 +128,7 @@ export default function ProfilSayaPage() {
     LiteStore.updateUserBio(currentUser.id, bioInput.trim());
     refreshData();
     setIsEditingBio(false);
+    toast.success('Biodata profil berhasil diperbarui!');
   };
 
   return (

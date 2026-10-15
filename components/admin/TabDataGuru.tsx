@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { User, Class, UserRole } from '../../lib/types';
 import { LiteStore } from '../../lib/store';
+import { toast, confirmDialog } from '../../lib/toast';
 import { 
   BookOpen, Plus, Upload, Trash2, Edit3, Key, Search, 
   X, Download, FileSpreadsheet, CheckCircle2, AlertCircle,
@@ -81,7 +82,7 @@ export default function TabDataGuru({
 
     const existingUser = users.find(u => u.username?.toLowerCase() === username.trim().toLowerCase());
     if (existingUser) {
-      alert(`Username "${username}" sudah digunakan oleh ${existingUser.nama}! Silakan gunakan username lain.`);
+      toast.error(`Username "${username}" sudah digunakan oleh ${existingUser.nama}! Silakan gunakan username lain.`);
       return;
     }
 
@@ -96,7 +97,7 @@ export default function TabDataGuru({
     setNama('');
     setBio('');
     setShowAddModal(false);
-    alert(`Guru / Pembimbing ${nama} berhasil didaftarkan ke sistem!`);
+    toast.success(`Guru / Pembimbing ${nama} berhasil didaftarkan ke sistem!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -122,7 +123,7 @@ export default function TabDataGuru({
     });
 
     setEditingTeacher(null);
-    alert(`Data guru ${editNama} berhasil diperbarui!`);
+    toast.success(`Data guru ${editNama} berhasil diperbarui!`);
     if (onUserUpdated) onUserUpdated();
   };
 
@@ -150,14 +151,22 @@ export default function TabDataGuru({
   };
 
   // Hapus Guru
-  const handleDelete = (teacher: User) => {
+  const handleDelete = async (teacher: User) => {
     const supervised = getSupervisedClasses(teacher.id);
     const confirmMsg = supervised.length > 0
-      ? `Guru "${teacher.nama}" adalah wali kelas dari ${supervised.map(c => c.namaKelas).join(', ')}. Yakin ingin menghapus akun guru ini?`
+      ? `Guru "${teacher.nama}" adalah wali kelas dari ${supervised.map(c => c.namaKelas).join(', ')}. Yakin ingin menghapus akun guru ini? Penugasan wali kelas akan dikosongkan.`
       : `Yakin ingin menghapus data akun guru "${teacher.nama}"?`;
 
-    if (confirm(confirmMsg)) {
+    const ok = await confirmDialog({
+      title: 'Hapus Data Guru',
+      message: confirmMsg,
+      confirmText: 'Ya, Hapus Guru',
+      isDestructive: true
+    });
+
+    if (ok) {
       LiteStore.deleteUser(teacher.id);
+      toast.success(`Akun guru ${teacher.nama} berhasil dihapus`);
       if (onUserUpdated) onUserUpdated();
     }
   };
@@ -259,7 +268,7 @@ export default function TabDataGuru({
     setShowImportModal(false);
     setParsedExcelData([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    alert(`Import Berhasil! ${addedCount} data guru & pembimbing berhasil ditambahkan.`);
+    toast.success(`Import Berhasil! ${addedCount} data guru & pembimbing berhasil ditambahkan.`);
     if (onUserUpdated) onUserUpdated();
   };
 

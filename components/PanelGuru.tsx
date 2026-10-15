@@ -8,6 +8,7 @@ import {
   Sparkles, BookmarkCheck, Library, Printer, FileText, ArrowUpDown, X
 } from 'lucide-react';
 import RechartsWrapper from './RechartsWrapper';
+import { toast } from '../lib/toast';
 
 interface PanelGuruProps {
   currentUser: User;
@@ -241,7 +242,7 @@ export default function PanelGuru({
   // --- EKSPOR CSV REKAP EKSPLORASI ---
   const handleExportCSV = () => {
     if (rekapSiswa.length === 0) {
-      alert('Tidak ada data siswa untuk diekspor!');
+      toast.warning('Tidak ada data siswa untuk diekspor!');
       return;
     }
 
@@ -304,7 +305,7 @@ export default function PanelGuru({
   // --- EKSPOR CSV ARSIP ANTOLOGI KARYA PILIHAN GURU ---
   const handleExportArchiveCSV = () => {
     if (visibleCuratedPosts.length === 0) {
-      alert('Tidak ada karya terkurasi untuk diekspor!');
+      toast.warning('Tidak ada karya terkurasi untuk diekspor!');
       return;
     }
 

@@ -10,6 +10,7 @@ import {
   Heart, MessageSquare, Clock, ArrowLeft, Star, Award, 
   Share2, CheckCircle, Sparkles, Send, BookOpen
 } from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 export default function DetailTulisanPage() {
   const params = useParams();
@@ -75,7 +76,7 @@ export default function DetailTulisanPage() {
     e.preventDefault();
     if (!commentText.trim()) return;
     if (!currentUser) {
-      alert('Silakan login terlebih dahulu untuk memberikan komentar!');
+      toast.warning('Silakan login terlebih dahulu untuk memberikan komentar!');
       return;
     }
     commentPost(post.id, commentText.trim());
@@ -253,7 +254,7 @@ export default function DetailTulisanPage() {
                 <button
                   onClick={() => {
                     if (!currentUser) {
-                      alert('Silakan login terlebih dahulu untuk menyukai tulisan!');
+                      toast.warning('Silakan login terlebih dahulu untuk menyukai tulisan!');
                       return;
                     }
                     likePost(post.id);
