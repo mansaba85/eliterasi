@@ -625,13 +625,63 @@ export class LiteStore {
     return updatedPost;
   }
 
-  static deletePost(id: string): boolean {
+  static deletePost(id: string): { success: boolean; deductedPoints: number; authorNama: string } {
     const posts = this.getPosts();
-    const originalLength = posts.length;
+    const targetPost = posts.find(p => p.id === id);
+    if (!targetPost) return { success: false, deductedPoints: 0, authorNama: '' };
+
+    // Hitung seluruh poin yang pernah didapatkan penulis dari karya ini
+    let totalDeduction = 0;
+
+    // 1. Poin Terbit
+    if (targetPost.status === 'published') {
+      totalDeduction += targetPost.isMingguLiterasi ? 30 : 15;
+    }
+
+    // 2. Bonus Nilai / Kurasi Guru (Skor / 2)
+    if (targetPost.grade && targetPost.grade.skor) {
+      totalDeduction += Math.round(targetPost.grade.skor / 2);
+    }
+
+    // 3. Poin dari Like yang didapatkan
+    if (Array.isArray(targetPost.likes)) {
+      totalDeduction += targetPost.likes.length * 2;
+    }
+
+    // 4. Poin dari Reaksi Apresiasi yang didapatkan
+    if (Array.isArray(targetPost.reactions)) {
+      totalDeduction += targetPost.reactions.length * 1;
+    }
+
+    // 5. Poin dari Komentar yang didapatkan
+    if (Array.isArray(targetPost.comments)) {
+      totalDeduction += targetPost.comments.length * 1;
+    }
+
+    // Tarik kembali poin dari dompet akun penulis (siswa)
+    const users = this.getUsers();
+    const authorIndex = users.findIndex(u => u.id === targetPost.authorId);
+    if (authorIndex !== -1 && totalDeduction > 0) {
+      users[authorIndex].poin = Math.max(0, (users[authorIndex].poin || 0) - totalDeduction);
+      this.saveUsers(users);
+
+      const currentUser = this.getCurrentUser();
+      if (currentUser && currentUser.id === targetPost.authorId) {
+        currentUser.poin = users[authorIndex].poin;
+        this.saveCurrentUser(currentUser);
+      }
+    }
+
+    // Hapus karya dari daftar naskah
     const filtered = posts.filter(p => p.id !== id);
-    if (filtered.length === originalLength) return false;
     this.savePosts(filtered);
-    return true;
+
+    this.addAuditLog(
+      'HAPUS_KARYA',
+      `Menghapus karya "${targetPost.judul}" oleh ${targetPost.authorNama} serta menarik kembali ${totalDeduction} poin dari akun siswa.`
+    );
+
+    return { success: true, deductedPoints: totalDeduction, authorNama: targetPost.authorNama };
   }
 
   static likePost(postId: string, userId: string): Post | null {

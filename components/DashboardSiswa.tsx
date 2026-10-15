@@ -836,7 +836,18 @@ export default function DashboardSiswa({
                         <p className="text-xs text-slate-500 line-clamp-2 mb-4 leading-normal">{draft.isi}</p>
                         <div className="flex items-center gap-2 justify-end">
                           <button 
-                            onClick={() => onPostDeleted(draft.id)}
+                            onClick={async () => {
+                              const ok = await confirmDialog({
+                                title: 'Hapus Naskah Draft',
+                                message: `Hapus naskah draft "${draft.judul}"?`,
+                                confirmText: 'Ya, Hapus Draft',
+                                isDestructive: true
+                              });
+                              if (ok) {
+                                onPostDeleted(draft.id);
+                                toast.success('Draft berhasil dihapus');
+                              }
+                            }}
                             className="text-xs text-rose-600 hover:text-rose-800 font-semibold p-1.5 hover:bg-rose-50 rounded"
                           >
                             Hapus
@@ -884,7 +895,18 @@ export default function DashboardSiswa({
                           </div>
                           <div className="flex items-center gap-1.5">
                             <button 
-                              onClick={() => onPostDeleted(post.id)}
+                              onClick={async () => {
+                                const ok = await confirmDialog({
+                                  title: 'Hapus Karya Tulisan',
+                                  message: `Yakin ingin menghapus karya "${post.judul}"? Seluruh poin reward yang didapatkan dari karya ini akan otomatis ditarik kembali.`,
+                                  confirmText: 'Ya, Hapus Karya',
+                                  isDestructive: true
+                                });
+                                if (ok) {
+                                  onPostDeleted(post.id);
+                                  toast.success('Karya berhasil dihapus dan poin ditarik');
+                                }
+                              }}
                               className="text-xs text-rose-600 hover:text-rose-800 font-semibold p-1.5 hover:bg-rose-50 rounded"
                             >
                               Hapus

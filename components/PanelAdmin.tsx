@@ -1123,14 +1123,14 @@ export default function PanelAdmin({
                               <button 
                                 onClick={async () => {
                                   const ok = await confirmDialog({
-                                    title: 'Hapus Karya Siswa',
-                                    message: `Hapus permanen karya "${post.judul}" oleh ${post.authorNama}? Tindakan ini tidak dapat dibatalkan.`,
-                                    confirmText: 'Ya, Hapus Permanen',
+                                    title: 'Hapus Karya Siswa & Tarik Poin',
+                                    message: `Hapus permanen karya "${post.judul}" oleh ${post.authorNama}? Seluruh poin yang diperoleh siswa dari karya ini (poin terbit & bonus nilai kurasi) akan otomatis ditarik kembali.`,
+                                    confirmText: 'Ya, Hapus & Tarik Poin',
                                     isDestructive: true
                                   });
                                   if (ok) {
                                     onDeletePost(post.id);
-                                    toast.success('Karya berhasil dihapus');
+                                    toast.success(`Karya "${post.judul}" berhasil dihapus dan poin siswa ditarik.`);
                                   }
                                 }}
                                 className="text-xs text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1 cursor-pointer hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors"
