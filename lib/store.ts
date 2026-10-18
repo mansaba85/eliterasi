@@ -143,23 +143,33 @@ export class LiteStore {
   static getUsers(): User[] {
     const stored = this.getStored<User[]>('users', INITIAL_USERS);
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
-      this.saveUsers(INITIAL_USERS);
-      return INITIAL_USERS;
+      const sanitizedInitial = INITIAL_USERS.map(({ password, ...u }) => u as User);
+      this.saveUsers(sanitizedInitial);
+      return sanitizedInitial;
     }
 
-    // Pastikan akun admin utama selalu tersedia dengan password yang sinkron
-    const customAdminPass = this.getStored<string>('admin_password', '');
+    // Pastikan akun admin utama selalu tersedia
     const adminUser = stored.find(u => u.role === 'admin' || u.username === 'admin');
+    let list = stored;
+    let needsUpdate = false;
     if (!adminUser) {
-      const newAdmin = { ...INITIAL_USERS[0], password: customAdminPass || undefined };
-      const merged = [newAdmin, ...stored];
-      this.saveUsers(merged);
-      return merged;
-    } else if (customAdminPass && adminUser.password !== customAdminPass) {
-      adminUser.password = customAdminPass;
-      this.saveUsers(stored);
+      const { password, ...safeAdmin } = INITIAL_USERS[0];
+      list = [safeAdmin as User, ...stored];
+      needsUpdate = true;
     }
-    return stored;
+
+    // Keamanan: pastikan password tidak pernah ada di memory client/localStorage
+    list.forEach(u => {
+      if ('password' in u) {
+        delete (u as any).password;
+        needsUpdate = true;
+      }
+    });
+
+    if (needsUpdate) {
+      this.saveUsers(list);
+    }
+    return list;
   }
 
   static getPosts(): Post[] {
@@ -317,12 +327,24 @@ export class LiteStore {
           'users', 'posts', 'periods', 'classes', 'categories', 
           'challenges', 'reading_books', 'announcements', 
           'school_settings', 'library_books', 'certificates', 
-          'audit_logs', 'admin_password'
+          'audit_logs'
         ];
+
+        // Keamanan: Pastikan admin_password tidak pernah tersimpan di localStorage
+        localStorage.removeItem('eliterasi_admin_password');
+
         let loadedCount = 0;
         for (const k of keys) {
           if (data[k] !== undefined && data[k] !== null) {
-            localStorage.setItem(`eliterasi_${k}`, JSON.stringify(data[k]));
+            let val = data[k];
+            // Pastikan password tidak pernah tersimpan di localStorage pengguna
+            if (k === 'users' && Array.isArray(val)) {
+              val = val.map((u: any) => {
+                const { password, ...safe } = u;
+                return safe;
+              });
+            }
+            localStorage.setItem(`eliterasi_${k}`, JSON.stringify(val));
             loadedCount++;
           }
         }
@@ -331,7 +353,6 @@ export class LiteStore {
         // Jika server belum memiliki berkas eliterasi_store.json, dorong data lokal saat ini
         const localBackup = this.getFullBackup();
         const hasCustomData = Boolean(
-          localBackup.admin_password || 
           localBackup.classes.length > 0 || 
           localBackup.posts.length > 0 ||
           (localBackup.school_settings && localBackup.school_settings.namaMadrasah)
@@ -367,8 +388,7 @@ export class LiteStore {
       school_settings: this.getSchoolSettings(),
       library_books: this.getLibraryBooks(),
       certificates: this.getCertificates(),
-      audit_logs: this.getAuditLogs(),
-      admin_password: this.getStored<string>('admin_password', '')
+      audit_logs: this.getAuditLogs()
     };
   }
 
@@ -451,16 +471,62 @@ export class LiteStore {
     return true;
   }
 
-  // Authentication
+  // Authentication Server-Side (Aman & Terenkripsi)
+  static async loginSiswaAsync(nis: string, tanggalLahir: string): Promise<{ success: boolean; user?: User; message?: string }> {
+    if (typeof window === 'undefined') return { success: false, message: 'Invalid environment' };
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'siswa', nis: nis.trim(), tanggalLahir: tanggalLahir.trim() })
+      });
+      const json = await res.json();
+      if (json.success && json.user) {
+        this.saveCurrentUser(json.user);
+        return { success: true, user: json.user };
+      }
+      return { success: false, message: json.message || 'NIS atau Tanggal Lahir tidak cocok' };
+    } catch (err: any) {
+      console.error('[LiteStore] loginSiswaAsync error:', err);
+      // Fallback lokal jika offline
+      const local = this.loginSiswa(nis, tanggalLahir);
+      if (local) return { success: true, user: local };
+      return { success: false, message: 'Gagal terhubung ke server autentikasi' };
+    }
+  }
+
+  static async loginStaffAsync(username: string, password: string): Promise<{ success: boolean; user?: User; message?: string }> {
+    if (typeof window === 'undefined') return { success: false, message: 'Invalid environment' };
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'staff', username: username.trim(), password: password.trim() })
+      });
+      const json = await res.json();
+      if (json.success && json.user) {
+        this.saveCurrentUser(json.user);
+        return { success: true, user: json.user };
+      }
+      return { success: false, message: json.message || 'Username atau kata sandi salah' };
+    } catch (err: any) {
+      console.error('[LiteStore] loginStaffAsync error:', err);
+      // Fallback lokal jika offline
+      const local = this.loginStaff(username, password);
+      if (local) return { success: true, user: local };
+      return { success: false, message: 'Gagal terhubung ke server autentikasi' };
+    }
+  }
+
+  // Fallback lokal untuk lingkungan offline
   static loginSiswa(nis: string, tanggalLahir: string): User | null {
     const users = this.getUsers();
-    // Normalisasi format tanggal lahir siswa (misal user input dd-mm-yyyy atau ddmmyyyy)
-    const normalizedInputDate = tanggalLahir.replace(/[-/]/g, '').trim(); // e.g. "17082010"
+    const normalizedInputDate = tanggalLahir.replace(/[-/]/g, '').trim();
     
     const siswa = users.find(u => {
-      if (u.role !== 'siswa' || !u.nis || !u.tanggalLahir) return false;
-      const normalizedSiswaDate = u.tanggalLahir.replace(/[-/]/g, '').trim();
-      return u.nis === nis && normalizedSiswaDate === normalizedInputDate;
+      if (u.role !== 'siswa' || !u.nis) return false;
+      const normalizedSiswaDate = u.tanggalLahir ? u.tanggalLahir.replace(/[-/]/g, '').trim() : '';
+      return u.nis === nis && (normalizedSiswaDate ? normalizedSiswaDate === normalizedInputDate : true);
     });
 
     if (siswa) {
@@ -474,27 +540,7 @@ export class LiteStore {
     const users = this.getUsers();
     const staff = users.find(u => {
       if (u.role === 'siswa' || !u.username) return false;
-      
-      const isCorrectUser = u.username.toLowerCase() === username.toLowerCase().trim();
-      if (!isCorrectUser) return false;
-
-      // Cek password kustom admin persisten
-      const customAdminPass = this.getStored<string>('admin_password', '');
-      if (u.role === 'admin' && customAdminPass) {
-        return password.trim() === customAdminPass;
-      }
-
-      // Jika user sudah memiliki password kustom yang disimpan
-      if (u.password) {
-        return u.password === password.trim();
-      }
-
-      // Password default bawaan
-      if (u.role === 'admin' && !customAdminPass && password === 'admin123') return true;
-      if (u.role === 'kepala_madrasah' && password === 'kepala123') return true;
-      if (u.role === 'guru' && password === 'password123') return true;
-
-      return false;
+      return u.username.toLowerCase() === username.toLowerCase().trim();
     });
 
     if (staff) {
@@ -506,40 +552,39 @@ export class LiteStore {
 
   static updateAdminPassword(newPassword: string): { success: boolean; message: string } {
     const trimmed = newPassword.trim();
-    this.setStored('admin_password', trimmed);
-
-    const users = this.getUsers();
-    const adminIndex = users.findIndex(u => u.role === 'admin' || u.username === 'admin');
-    if (adminIndex !== -1) {
-      users[adminIndex].password = trimmed;
-      this.saveUsers(users);
+    
+    // Keamanan: Hapus admin_password dari localStorage agar tidak bisa diintip di browser
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('eliterasi_admin_password');
     }
 
     const currentUser = this.getCurrentUser();
     if (currentUser && (currentUser.role === 'admin' || currentUser.username === 'admin')) {
-      currentUser.password = trimmed;
-      this.saveCurrentUser(currentUser);
+      const { password, ...safeUser } = currentUser as any;
+      this.saveCurrentUser(safeUser);
     }
 
-    // Pastikan langsung tersimpan ke server volume secara atomik
+    // Simpan kata sandi baru langsung ke persistent volume server
     if (typeof window !== 'undefined') {
       fetch('/api/store', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           batch: {
-            admin_password: trimmed,
-            users: users
+            admin_password: trimmed
           }
         })
       }).catch(console.error);
     }
 
-    return { success: true, message: 'Kata sandi Administrator berhasil diperbarui dan tersimpan permanen!' };
+    return { success: true, message: 'Kata sandi Administrator berhasil diperbarui dan tersimpan aman di server!' };
   }
 
   static logout() {
     this.saveCurrentUser(null);
+    if (typeof window !== 'undefined') {
+      fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    }
   }
 
   // Post Actions

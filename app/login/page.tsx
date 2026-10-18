@@ -31,10 +31,10 @@ export default function LoginPage() {
     }
   }, [currentUser, router]);
 
-  const handleStudentSubmit = (e: React.FormEvent) => {
+  const handleStudentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const success = loginSiswa(studentNis.trim(), studentBirthDate.trim());
+    const success = await loginSiswa(studentNis.trim(), studentBirthDate.trim());
     if (success) {
       router.push('/');
     } else {
@@ -42,10 +42,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleStaffSubmit = (e: React.FormEvent) => {
+  const handleStaffSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const success = loginStaff(staffUsername.trim(), staffPassword.trim());
+    const success = await loginStaff(staffUsername.trim(), staffPassword.trim());
     if (success) {
       router.push('/');
     } else {
@@ -259,11 +259,11 @@ export default function LoginPage() {
                 <div className="flex flex-wrap justify-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setLoginRole('siswa');
                       setStudentNis('2024001');
                       setStudentBirthDate('14092008');
-                      const success = loginSiswa('2024001', '14092008');
+                      const success = await loginSiswa('2024001', '14092008');
                       if (success) router.push('/');
                     }}
                     className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold transition-colors cursor-pointer"
@@ -272,11 +272,11 @@ export default function LoginPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setLoginRole('staff');
                       setStaffUsername('guru1');
                       setStaffPassword('password123');
-                      const success = loginStaff('guru1', 'password123');
+                      const success = await loginStaff('guru1', 'password123');
                       if (success) router.push('/guru');
                     }}
                     className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-bold transition-colors cursor-pointer"
@@ -285,11 +285,11 @@ export default function LoginPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setLoginRole('staff');
                       setStaffUsername('admin');
                       setStaffPassword('admin123');
-                      const success = loginStaff('admin', 'admin123');
+                      const success = await loginStaff('admin', 'admin123');
                       if (success) router.push('/admin');
                     }}
                     className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg font-bold transition-colors cursor-pointer"
@@ -298,11 +298,11 @@ export default function LoginPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setLoginRole('staff');
                       setStaffUsername('kepala');
                       setStaffPassword('kepala123');
-                      const success = loginStaff('kepala', 'kepala123');
+                      const success = await loginStaff('kepala', 'kepala123');
                       if (success) router.push('/guru');
                     }}
                     className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-bold transition-colors cursor-pointer"

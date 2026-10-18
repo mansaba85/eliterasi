@@ -28,8 +28,8 @@ interface AppContextType {
   mounted: boolean;
   
   // Auth methods
-  loginSiswa: (nis: string, tanggalLahir: string) => boolean;
-  loginStaff: (username: string, password: string) => boolean;
+  loginSiswa: (nis: string, tanggalLahir: string) => Promise<boolean>;
+  loginStaff: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   setCurrentUser: (user: User | null) => void;
 
@@ -92,20 +92,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const loginSiswa = (nis: string, tanggalLahir: string): boolean => {
-    const user = LiteStore.loginSiswa(nis.trim(), tanggalLahir.trim());
-    if (user) {
-      setCurrentUser(user);
+  const loginSiswa = async (nis: string, tanggalLahir: string): Promise<boolean> => {
+    const res = await LiteStore.loginSiswaAsync(nis.trim(), tanggalLahir.trim());
+    if (res.success && res.user) {
+      setCurrentUser(res.user);
       syncAll();
       return true;
     }
     return false;
   };
 
-  const loginStaff = (username: string, password: string): boolean => {
-    const user = LiteStore.loginStaff(username.trim(), password.trim());
-    if (user) {
-      setCurrentUser(user);
+  const loginStaff = async (username: string, password: string): Promise<boolean> => {
+    const res = await LiteStore.loginStaffAsync(username.trim(), password.trim());
+    if (res.success && res.user) {
+      setCurrentUser(res.user);
       syncAll();
       return true;
     }
