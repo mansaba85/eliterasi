@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/lib/AppContext';
 import Logo from '@/components/Logo';
-import { BookOpen, User as UserIcon, Calendar, Lock, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { BookOpen, User as UserIcon, Calendar, Lock, ArrowRight, ShieldCheck, Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [studentBirthDate, setStudentBirthDate] = useState('');
   const [staffUsername, setStaffUsername] = useState('');
   const [staffPassword, setStaffPassword] = useState('');
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   // If already logged in, redirect
@@ -228,13 +229,26 @@ export default function LoginPage() {
                       <Lock className="w-4 h-4" />
                     </div>
                     <input 
-                      type="password" 
+                      type={showStaffPassword ? "text" : "password"} 
                       required 
                       placeholder="••••••••" 
                       value={staffPassword} 
                       onChange={(e) => setStaffPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-[#1e3bb3] focus:ring-1 focus:ring-[#1e3bb3] rounded-xl text-xs font-medium placeholder-slate-400 transition-all outline-none"
+                      className="w-full pl-10 pr-11 py-3 bg-white border border-slate-200 focus:border-[#1e3bb3] focus:ring-1 focus:ring-[#1e3bb3] rounded-xl text-xs font-medium placeholder-slate-400 transition-all outline-none"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowStaffPassword(!showStaffPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                      title={showStaffPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                      aria-label={showStaffPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    >
+                      {showStaffPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
