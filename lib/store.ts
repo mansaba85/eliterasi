@@ -438,8 +438,15 @@ export class LiteStore {
   static saveSchoolSettings(settings: SchoolSettings) { this.setStored('school_settings', settings); }
   static saveLibraryBooks(books: LibraryBook[]) { this.setStored('library_books', books); }
   static saveCertificates(certs: CertificateRecord[]) { this.setStored('certificates', certs); }
-  static saveAuditLogs(logs: AuditLog[]) { this.setStored('audit_logs', logs); }
-  static saveCurrentUser(user: User | null) { this.setStored('current_user', user); }
+  static saveCurrentUser(user: User | null) {
+    if (typeof window === 'undefined') return;
+    if (!user) {
+      localStorage.removeItem('eliterasi_current_user');
+      return;
+    }
+    const { password, tanggalLahir, ...safeUser } = user as any;
+    localStorage.setItem('eliterasi_current_user', JSON.stringify(safeUser));
+  }
 
   static updateUserBio(userId: string, bio: string): boolean {
     const users = this.getUsers();

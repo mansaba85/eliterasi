@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
     const session = getSessionFromRequest(req);
     const isAdmin = session?.role === 'admin';
 
-    // 1. KEAMANAN MUTLAK: Jangan pernah ekspos admin_password ke siapapun di endpoint publik!
+    // 1. KEAMANAN MUTLAK: Jangan pernah ekspos admin_password atau current_user ke endpoint publik!
     delete data.admin_password;
+    delete data.current_user;
 
     // 2. KEAMANAN MUTLAK: Sanitasi seluruh user agar password tidak pernah bocor ke browser
     if (Array.isArray(data.users)) {
@@ -129,10 +130,15 @@ export async function POST(req: NextRequest) {
           } else if (body.key) {
             if (body.key === 'admin_password' && !isAdmin && existingAdminPass) {
               // Abaikan jika bukan admin
+            } else if (body.key === 'current_user') {
+              // Abaikan: session user adalah milik browser individual, bukan data shared server
             } else {
               currentStore[body.key] = body.value;
             }
           }
+
+          // Pastikan current_user tidak pernah tersimpan di berkas database server global
+          delete currentStore.current_user;
 
           currentStore.updatedAt = new Date().toISOString();
 
