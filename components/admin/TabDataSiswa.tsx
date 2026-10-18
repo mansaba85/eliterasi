@@ -174,9 +174,9 @@ export default function TabDataSiswa({
   const handleDownloadTemplate = () => {
     const headers = ['Nomor Induk Siswa (NIS)', 'Nama Lengkap Siswa', 'Tanggal Lahir (DD/MM/YYYY)', 'Nama Kelas (Contoh: XII IPA 1)'];
     const sampleRows = [
-      ['2024010', 'Ahmad Dani Pratama', '12/05/2009', 'XII IPA 1'],
-      ['2024011', 'Siti Fatimah Azzahra', '20/11/2009', 'XI IPS 1'],
-      ['2024012', 'Budi Santoso', '08/02/2010', 'X IPA 3']
+      ['4999', 'Ahmad Dani Pratama', '12/05/2009', 'XII IPA 1'],
+      ['5001', 'Siti Fatimah Azzahra', '20/11/2009', 'XI IPS 1'],
+      ['5002', 'Budi Santoso', '08/02/2010', 'X IPA 3']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
@@ -482,7 +482,7 @@ export default function TabDataSiswa({
                 <input
                   type="text"
                   required
-                  placeholder="Misal: 2024010"
+                  placeholder="Misal: 4999"
                   value={nis}
                   onChange={(e) => setNis(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#132257]"

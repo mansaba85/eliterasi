@@ -157,7 +157,7 @@ export default function LoginPage() {
                     <input 
                       type="text" 
                       required 
-                      placeholder="Contoh: 2024001" 
+                      placeholder="Contoh: 4999" 
                       value={studentNis} 
                       onChange={(e) => setStudentNis(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 focus:border-[#1e3bb3] focus:ring-1 focus:ring-[#1e3bb3] rounded-xl text-xs font-medium placeholder-slate-400 transition-all outline-none"

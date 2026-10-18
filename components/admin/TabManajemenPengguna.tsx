@@ -598,7 +598,7 @@ export default function TabManajemenPengguna({
                   <input
                     type="text"
                     required
-                    placeholder="Misal: 2024099"
+                    placeholder="Misal: 4999"
                     value={nis}
                     onChange={(e) => setNis(e.target.value)}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
