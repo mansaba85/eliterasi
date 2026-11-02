@@ -8,6 +8,89 @@ import { getSessionFromRequest } from '@/lib/serverAuth';
 const DATA_DIR = path.join(process.cwd(), 'public', 'uploads');
 const STORE_FILE = path.join(DATA_DIR, 'eliterasi_store.json');
 
+// ===== Perlindungan anti-kehilangan data pada sinkronisasi =====
+// Latar belakang: data disimpan sebagai array utuh per key dan setiap browser
+// mengirimkan seluruh array saat menyimpan (last-writer-wins). Satu browser
+// dengan snapshot kosong/basi pernah menghapus SELURUH akun siswa di server.
+//
+// Untuk key 'users' dan 'posts', penulisan kini digabung per-record:
+// - Record baru/berubah dari pengirim selalu diterapkan (upsert).
+// - Record lama yang tidak ada di kiriman TIDAK otomatis terhapus:
+//   * Pengirim non-admin hanya boleh "menghapus" posting miliknya sendiri
+//     (posts.authorId === userId sesi); akun pengguna tidak pernah bisa
+//     dihapus oleh non-admin lewat sinkronisasi.
+//   * Penghapusan massal yang membuat koleksi turun di bawah 50% dari jumlah
+//     sebelumnya (dan jumlah awal >= 20) DIBLOKIR untuk semua pengirim,
+//     kecuali admin yang secara eksplisit mengirim allowShrink: true
+//     (dipakai alur Backup & Restore yang memang disengaja).
+const SHRINK_MIN_EXISTING = 20;
+const SHRINK_KEEP_RATIO = 0.5;
+
+function recordIdentity(key: string, rec: any): string {
+  if (!rec || typeof rec !== 'object') return '';
+  if (rec.id) return `id:${rec.id}`;
+  if (key === 'users') {
+    if (rec.nis) return `nis:${rec.nis}`;
+    if (rec.username) return `username:${rec.username}`;
+  }
+  return '';
+}
+
+function guardCollection(
+  key: 'users' | 'posts',
+  existing: any,
+  proposed: any,
+  opts: { isAdmin: boolean; sessionUserId?: string; allowShrink: boolean }
+): any {
+  if (!Array.isArray(existing) || existing.length === 0) return proposed;
+  if (!Array.isArray(proposed)) return proposed;
+
+  const proposedIds = new Set(
+    proposed.map((r: any) => recordIdentity(key, r)).filter(Boolean)
+  );
+  const missing = existing.filter((r: any) => {
+    const id = recordIdentity(key, r);
+    // Record tanpa identitas tidak bisa dibuktikan sama dengan kiriman mana
+    // pun, jadi selalu dipertahankan.
+    return !id || !proposedIds.has(id);
+  });
+  if (missing.length === 0) return proposed;
+
+  // Tentukan record hilang mana yang BOLEH benar-benar dihapus.
+  let removable: any[];
+  if (opts.isAdmin) {
+    removable = missing;
+  } else if (key === 'posts' && opts.sessionUserId) {
+    removable = missing.filter((r: any) => r.authorId === opts.sessionUserId);
+  } else {
+    removable = [];
+  }
+
+  // Blokir penyusutan drastis untuk semua pengirim (termasuk sesi admin yang
+  // datanya rusak/"diheal" menjadi daftar bawaan), kecuali restore admin
+  // yang disengaja dengan allowShrink.
+  const finalCount = existing.length - removable.length;
+  const drasticShrink =
+    existing.length >= SHRINK_MIN_EXISTING &&
+    finalCount < existing.length * SHRINK_KEEP_RATIO;
+  if (drasticShrink && !(opts.isAdmin && opts.allowShrink)) {
+    console.warn(
+      `[API Store] Penghapusan ${key} ditahan: ${existing.length} -> ${finalCount} record dianggap penyusutan drastis (isAdmin=${opts.isAdmin}, allowShrink=${opts.allowShrink}).`
+    );
+    removable = [];
+  }
+
+  if (removable.length === missing.length) return proposed;
+  const removableIds = new Set(
+    removable.map((r: any) => recordIdentity(key, r)).filter(Boolean)
+  );
+  const kept = missing.filter((r: any) => {
+    const id = recordIdentity(key, r);
+    return !id || !removableIds.has(id);
+  });
+  return [...proposed, ...kept];
+}
+
 export async function GET(req: NextRequest) {
   try {
     if (!existsSync(STORE_FILE)) {
@@ -65,6 +148,9 @@ export async function POST(req: NextRequest) {
 
     const session = getSessionFromRequest(req);
     const isAdmin = session?.role === 'admin';
+    // Hanya admin yang boleh menyatakan penulisan ini memang disengaja
+    // menyusutkan koleksi (dipakai alur Backup & Restore).
+    const allowShrink = (body as any)?.allowShrink === true;
 
     return await new Promise<NextResponse>((resolve) => {
       writeQueue = writeQueue.then(async () => {
@@ -81,6 +167,10 @@ export async function POST(req: NextRequest) {
               currentStore = {};
             }
           }
+
+          // Snapshot koleksi terproteksi SEBELUM mutasi, untuk guard di akhir.
+          const prevUsers = currentStore.users;
+          const prevPosts = currentStore.posts;
 
           // Lindungi kredensial admin jika bukan admin yang mengubah
           const existingAdminPass = currentStore.admin_password || '';
@@ -135,6 +225,25 @@ export async function POST(req: NextRequest) {
             } else {
               currentStore[body.key] = body.value;
             }
+          }
+
+          // Terapkan perlindungan anti-kehilangan data: bila penulisan ini
+          // menyentuh 'users' atau 'posts', gabung per-record terhadap
+          // snapshot sebelumnya agar record yang tidak ikut terkirim tidak
+          // ikut terhapus (lihat guardCollection).
+          if (currentStore.users !== prevUsers) {
+            currentStore.users = guardCollection('users', prevUsers, currentStore.users, {
+              isAdmin,
+              sessionUserId: session?.userId,
+              allowShrink,
+            });
+          }
+          if (currentStore.posts !== prevPosts) {
+            currentStore.posts = guardCollection('posts', prevPosts, currentStore.posts, {
+              isAdmin,
+              sessionUserId: session?.userId,
+              allowShrink,
+            });
           }
 
           // Pastikan current_user tidak pernah tersimpan di berkas database server global
