@@ -18,3 +18,7 @@ View your app in AI Studio: https://ai.studio/apps/803ec679-15a1-4874-ad20-ed85d
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Keamanan Data & Cadangan
+
+Seluruh data aplikasi tersimpan di server dan disinkronkan dari browser pengguna. Unduh **Cadangan Lengkap (.json)** secara berkala lewat menu admin **Pengaturan Sekolah → Keamanan & Cadangan Data** dan simpan berkasnya di tempat aman — berkas itu berisi tanggal lahir siswa yang berfungsi sebagai PIN login, jadi jangan diunggah ke repositori publik. Sinkronisasi server dilindungi penggabungan per-record agar snapshot basi dari satu browser tidak menghapus data pengguna lain.
