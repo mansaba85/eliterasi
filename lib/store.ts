@@ -143,9 +143,12 @@ export class LiteStore {
   static getUsers(): User[] {
     const stored = this.getStored<User[]>('users', INITIAL_USERS);
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
-      const sanitizedInitial = INITIAL_USERS.map(({ password, ...u }) => u as User);
-      this.saveUsers(sanitizedInitial);
-      return sanitizedInitial;
+      // PENTING: jangan simpan/sinkronkan daftar bawaan di sini. Menyimpan
+      // daftar [admin] dari browser yang datanya kosong/rusak pernah
+      // menghapus seluruh akun siswa di server (last-writer-wins).
+      // Cukup kembalikan nilai bawaan untuk tampilan; penyimpanan hanya
+      // boleh terjadi lewat aksi pengguna yang disengaja.
+      return INITIAL_USERS.map(({ password, ...u }) => u as User);
     }
 
     // Pastikan akun admin utama selalu tersedia
@@ -175,7 +178,6 @@ export class LiteStore {
   static getPosts(): Post[] {
     const stored = this.getStored<Post[]>('posts', INITIAL_POSTS);
     if (!stored || !Array.isArray(stored)) {
-      this.savePosts(INITIAL_POSTS);
       return INITIAL_POSTS;
     }
     return stored;
@@ -184,7 +186,6 @@ export class LiteStore {
   static getPeriods(): MingguLiterasiPeriod[] {
     const stored = this.getStored<MingguLiterasiPeriod[]>('periods', INITIAL_PERIODS);
     if (!stored || !Array.isArray(stored)) {
-      this.savePeriods(INITIAL_PERIODS);
       return INITIAL_PERIODS;
     }
     return stored;
@@ -193,7 +194,6 @@ export class LiteStore {
   static getClasses(): Class[] {
     const stored = this.getStored<Class[]>('classes', INITIAL_CLASSES);
     if (!stored || !Array.isArray(stored)) {
-      this.saveClasses(INITIAL_CLASSES);
       return INITIAL_CLASSES;
     }
     return stored;
@@ -202,7 +202,6 @@ export class LiteStore {
   static getCategories(): Category[] {
     const stored = this.getStored<Category[]>('categories', INITIAL_CATEGORIES);
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
-      this.saveCategories(INITIAL_CATEGORIES);
       return INITIAL_CATEGORIES;
     }
     const existingIds = new Set(stored.map(c => c.id));
@@ -218,7 +217,6 @@ export class LiteStore {
   static getChallenges(): Challenge[] {
     const stored = this.getStored<Challenge[]>('challenges', INITIAL_CHALLENGES);
     if (!stored || !Array.isArray(stored)) {
-      this.saveChallenges(INITIAL_CHALLENGES);
       return INITIAL_CHALLENGES;
     }
     return stored;
@@ -227,7 +225,6 @@ export class LiteStore {
   static getAnnouncements(): Announcement[] {
     const stored = this.getStored<Announcement[]>('announcements', INITIAL_ANNOUNCEMENTS);
     if (!stored || !Array.isArray(stored)) {
-      this.saveAnnouncements(INITIAL_ANNOUNCEMENTS);
       return INITIAL_ANNOUNCEMENTS;
     }
     return stored;
@@ -236,7 +233,6 @@ export class LiteStore {
   static getReadingBooks(): ReadingBook[] {
     const stored = this.getStored<ReadingBook[]>('reading_books', INITIAL_READING_BOOKS);
     if (!stored || !Array.isArray(stored)) {
-      this.saveReadingBooks(INITIAL_READING_BOOKS);
       return INITIAL_READING_BOOKS;
     }
     return stored;
@@ -245,7 +241,6 @@ export class LiteStore {
   static getSchoolSettings(): SchoolSettings {
     const stored = this.getStored<SchoolSettings>('school_settings', INITIAL_SCHOOL_SETTINGS);
     if (!stored || !stored.namaMadrasah) {
-      this.saveSchoolSettings(INITIAL_SCHOOL_SETTINGS);
       return INITIAL_SCHOOL_SETTINGS;
     }
     return stored;
@@ -254,7 +249,6 @@ export class LiteStore {
   static getLibraryBooks(): LibraryBook[] {
     const stored = this.getStored<LibraryBook[]>('library_books', INITIAL_LIBRARY_BOOKS);
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
-      this.saveLibraryBooks(INITIAL_LIBRARY_BOOKS);
       return INITIAL_LIBRARY_BOOKS;
     }
     const existingIds = new Set(stored.map(b => b.id));
@@ -270,7 +264,6 @@ export class LiteStore {
   static getCertificates(): CertificateRecord[] {
     const stored = this.getStored<CertificateRecord[]>('certificates', INITIAL_CERTIFICATES);
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
-      this.saveCertificates(INITIAL_CERTIFICATES);
       return INITIAL_CERTIFICATES;
     }
     const existingIds = new Set(stored.map(c => c.id));
@@ -286,7 +279,6 @@ export class LiteStore {
   static getAuditLogs(): AuditLog[] {
     const stored = this.getStored<AuditLog[]>('audit_logs', INITIAL_AUDIT_LOGS);
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
-      this.saveAuditLogs(INITIAL_AUDIT_LOGS);
       return INITIAL_AUDIT_LOGS;
     }
     return stored;
@@ -416,7 +408,7 @@ export class LiteStore {
         fetch('/api/store', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fullStore: data })
+          body: JSON.stringify({ fullStore: data, allowShrink: true })
         }).catch(console.error);
       }
       return true;
