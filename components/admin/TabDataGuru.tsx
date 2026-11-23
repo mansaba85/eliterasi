@@ -250,10 +250,11 @@ export default function TabDataGuru({
     if (parsedExcelData.length === 0) return;
 
     let addedCount = 0;
-    const existingUsers = LiteStore.getUsers();
 
     parsedExcelData.forEach(item => {
-      const exists = existingUsers.some(u => u.username?.toLowerCase() === item.username.toLowerCase());
+      // Cek ulang dari penyimpanan setiap baris: daftar yang diambil sekali
+      // di awal tidak melihat guru yang baru ditambahkan baris sebelumnya.
+      const exists = LiteStore.getUsers().some(u => u.username?.toLowerCase() === item.username.toLowerCase());
       if (!exists) {
         LiteStore.addTeacher({
           username: item.username,
