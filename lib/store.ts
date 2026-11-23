@@ -430,6 +430,7 @@ export class LiteStore {
   static saveSchoolSettings(settings: SchoolSettings) { this.setStored('school_settings', settings); }
   static saveLibraryBooks(books: LibraryBook[]) { this.setStored('library_books', books); }
   static saveCertificates(certs: CertificateRecord[]) { this.setStored('certificates', certs); }
+  static saveAuditLogs(logs: AuditLog[]) { this.setStored('audit_logs', logs); }
   static saveCurrentUser(user: User | null) {
     if (typeof window === 'undefined') return;
     if (!user) {
@@ -1179,9 +1180,15 @@ export class LiteStore {
   // Teacher / Staff Operations
   static addTeacher(data: { username: string; nama: string; bio?: string; role?: 'guru' | 'kepala_madrasah' | 'admin' }): User {
     const users = this.getUsers();
+    // Cegah duplikat: username adalah identitas login guru, jadi satu
+    // username hanya boleh punya satu akun. Bila sudah ada (mis. klik
+    // simpan ganda atau impor berulang), kembalikan akun yang ada.
+    const username = data.username.trim().toLowerCase();
+    const existing = users.find(u => u.username?.toLowerCase() === username);
+    if (existing) return existing;
     const newTeacher: User = {
       id: `usr-stf-${Date.now()}`,
-      username: data.username.trim().toLowerCase(),
+      username,
       nama: data.nama.trim(),
       role: data.role || 'guru',
       bio: data.bio?.trim() || 'Guru Pembimbing Literasi MA NU 01 Banyuputih.',
@@ -1387,7 +1394,13 @@ export class LiteStore {
     logs.unshift(newLog);
     // Keep last 200 logs
     const trimmed = logs.slice(0, 200);
-    this.saveAuditLogs(trimmed);
+    try {
+      this.saveAuditLogs(trimmed);
+    } catch (e) {
+      // Kegagalan pencatatan audit tidak boleh menggagalkan aksi pengguna
+      // yang sudah tersimpan (pernah membuat modal macet & data terduplikasi).
+      console.warn('[LiteStore] Gagal menyimpan log audit:', e);
+    }
     return newLog;
   }
 
